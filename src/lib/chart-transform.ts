@@ -335,6 +335,68 @@ function formatDownloads(n: number): string {
   return String(Math.round(n));
 }
 
+export function injectWatermark(svg: SVGSVGElement): void {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svgRect = svg.getBoundingClientRect();
+
+  // Find xLabel ("Date" / "Timeline") for vertical alignment
+  let refY = svgRect.height - 15;
+  for (const t of svg.querySelectorAll('text')) {
+    const content = t.textContent?.trim();
+    if (content === 'Date' || content === 'Timeline') {
+      const r = t.getBoundingClientRect();
+      refY = r.top + r.height / 2 - svgRect.top;
+      break;
+    }
+  }
+
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('pointer-events', 'none');
+
+  // Inline favicon: "npm" badge
+  const sz = 16;
+  const iconG = document.createElementNS(ns, 'g');
+  iconG.setAttribute('transform', `translate(0, ${-sz / 2})`);
+
+  const badge = document.createElementNS(ns, 'rect');
+  badge.setAttribute('width', String(sz));
+  badge.setAttribute('height', String(sz));
+  badge.setAttribute('rx', '2');
+  badge.setAttribute('fill', '#1a1a1a');
+  badge.setAttribute('opacity', '0.8');
+  iconG.appendChild(badge);
+
+  const badgeLabel = document.createElementNS(ns, 'text');
+  badgeLabel.setAttribute('x', String(sz / 2));
+  badgeLabel.setAttribute('y', String(sz * 0.72));
+  badgeLabel.setAttribute('text-anchor', 'middle');
+  badgeLabel.setAttribute('font-family', 'monospace');
+  badgeLabel.setAttribute('font-size', '8');
+  badgeLabel.setAttribute('font-weight', 'bold');
+  badgeLabel.setAttribute('fill', '#fff');
+  badgeLabel.textContent = 'npm';
+  iconG.appendChild(badgeLabel);
+
+  g.appendChild(iconG);
+
+  // Domain text in hand-drawn font
+  const domain = document.createElementNS(ns, 'text');
+  domain.setAttribute('x', String(sz + 5));
+  domain.setAttribute('y', '0');
+  domain.setAttribute('dominant-baseline', 'central');
+  domain.setAttribute('font-family', 'xkcd, sans-serif');
+  domain.setAttribute('font-size', '15');
+  domain.setAttribute('fill', '#555');
+  domain.textContent = 'npm-history.com';
+  g.appendChild(domain);
+
+  // Append to measure, then right-align
+  svg.appendChild(g);
+  const gBox = g.getBBox();
+  const tx = svgRect.width - gBox.width - 20;
+  g.setAttribute('transform', `translate(${tx}, ${refY})`);
+}
+
 export function formatLogYAxisLabels(svg: SVGSVGElement): void {
   const allTicks = svg.querySelectorAll('.tick text');
   const svgRect = svg.getBoundingClientRect();
