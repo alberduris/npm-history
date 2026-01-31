@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/astro/Header.astro';
+import Footer from '../components/astro/Footer.astro';
+import SponsorSidebar from '../components/astro/SponsorSidebar.astro';
+import ChartApp from '../components/react/ChartApp';
+---
+
+<Layout>
+  <Header />
+  <main class="flex-1">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold tracking-tight">npm Downloads History</h1>
+        <p class="text-gray-500 mt-1 text-sm">View and compare npm package download trends</p>
+      </div>
+      <div class="flex flex-col lg:flex-row gap-8">
+        <div class="flex-1 min-w-0">
+          <ChartApp client:load />
+        </div>
+        <SponsorSidebar />
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>

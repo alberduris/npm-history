@@ -1,0 +1,27 @@
+---
+import sponsors from '../../data/sponsors.json';
+import SponsorCard from './SponsorCard.astro';
+
+const activeSponsors = sponsors.sponsors.filter((s: any) => s.active);
+const cta = sponsors.ctaCard;
+---
+
+<aside class="w-full lg:w-72 shrink-0 space-y-4">
+  {activeSponsors.length > 0 && (
+    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Sponsors</h3>
+  )}
+  {activeSponsors.map((sponsor: any) => (
+    <SponsorCard sponsor={sponsor} />
+  ))}
+  <a
+    href={cta.url}
+    class="block border border-dashed border-gray-300 rounded-lg p-4 text-center
+           hover:border-blue-400 hover:bg-blue-50/50 transition-colors"
+  >
+    <p class="font-medium text-gray-700 text-sm">{cta.headline}</p>
+    <p class="text-xs text-gray-500 mt-1">{cta.description}</p>
+    <span class="inline-block mt-2 text-blue-600 text-xs font-medium">
+      {cta.buttonText} &rarr;
+    </span>
+  </a>
+</aside>

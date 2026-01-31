@@ -1,0 +1,38 @@
+---
+interface Props {
+  sponsor: {
+    id: string;
+    name: string;
+    logo: string;
+    headline: string;
+    description: string;
+    url: string;
+    tier: string;
+  };
+}
+
+const { sponsor } = Astro.props;
+---
+
+<a
+  href={sponsor.url}
+  target="_blank"
+  rel="noopener sponsored"
+  class="block border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+  data-sponsor={sponsor.id}
+>
+  <div class="flex items-center gap-3">
+    <img
+      src={sponsor.logo}
+      alt={sponsor.name}
+      class:list={['object-contain', sponsor.tier === 'gold' ? 'w-12 h-12' : 'w-8 h-8']}
+      loading="lazy"
+    />
+    <div>
+      <p class="font-semibold text-gray-800 text-sm">{sponsor.headline}</p>
+      {sponsor.tier === 'gold' && (
+        <p class="text-xs text-gray-500 mt-1">{sponsor.description}</p>
+      )}
+    </div>
+  </div>
+</a>

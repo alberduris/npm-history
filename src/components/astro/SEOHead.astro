@@ -1,0 +1,24 @@
+---
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../../lib/constants';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = `${SITE_NAME} — npm Package Download History Charts`,
+  description = SITE_DESCRIPTION,
+} = Astro.props;
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={SITE_URL} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={SITE_URL} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
