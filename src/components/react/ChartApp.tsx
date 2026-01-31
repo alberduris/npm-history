@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PackageInput from './PackageInput';
 import DownloadChart from './DownloadChart';
-import ChartControls from './ChartControls';
 import ExportBar from './ExportBar';
+import EmbedBlock from './EmbedBlock';
+import SponsorBanner from './SponsorBanner';
 import LoadingState from './LoadingState';
 import { fetchPackageDownloads, PackageNotFoundError } from '../../lib/npm-api';
 import { aggregateWeekly } from '../../lib/data-transform';
@@ -122,12 +123,13 @@ export default function ChartApp() {
         />
       )}
 
-      <DownloadChart data={orderedData} options={options} chartRef={chartRef} />
+      <DownloadChart data={orderedData} options={options} onOptionsChange={setOptions} chartRef={chartRef} />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <ChartControls options={options} onChange={setOptions} hasData={orderedData.length > 0} />
-        <ExportBar chartRef={chartRef} data={orderedData} urlState={urlState} hasData={orderedData.length > 0} />
-      </div>
+      <ExportBar chartRef={chartRef} data={orderedData} urlState={urlState} hasData={orderedData.length > 0} />
+
+      <EmbedBlock urlState={urlState} hasData={orderedData.length > 0} />
+
+      {orderedData.length > 0 && <SponsorBanner />}
     </div>
   );
 }

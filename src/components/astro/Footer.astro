@@ -2,15 +2,52 @@
 
 ---
 
-<footer class="border-t border-gray-200 mt-12">
-  <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-    <span>The npm package download history graph</span>
-    <div class="flex items-center gap-4">
-      <a href="https://github.com/alberduris/npm-history" target="_blank" rel="noopener" class="hover:text-gray-700 transition-colors">
+<footer class="relative w-full shrink-0 h-auto mt-6 flex flex-col justify-end items-center">
+  <div class="w-full py-2 px-3 md:w-5/6 lg:max-w-7xl flex flex-row flex-wrap justify-between items-center text-neutral-700 border-t">
+    <div class="text-sm leading-8 flex flex-row flex-wrap justify-start items-center">
+      <div class="h-full text-gray-600">The npm package download history graph</div>
+      <a
+        class="h-full flex flex-row justify-center items-center ml-2 text-lg hover:opacity-80"
+        href="mailto:npm-history@alberduris.com"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+          <path d="M502.3 190.8c3.9-3.1 9.7-.2 9.7 4.7V400c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V195.6c0-5 5.7-7.8 9.7-4.7 22.4 17.4 52.1 39.5 154.1 113.6 21.1 15.4 56.7 47.8 92.2 47.6 35.7.3 72-32.8 92.3-47.6 102-74.1 131.6-96.3 154-113.7zM256 320c23.2.4 56.6-29.2 73.4-41.4 132.7-96.3 142.8-104.7 173.4-128.7 5.8-4.5 9.2-11.5 9.2-18.9v-19c0-26.5-21.5-48-48-48H48C21.5 64 0 85.5 0 112v19c0 7.4 3.4 14.3 9.2 18.9 30.6 23.9 40.7 32.4 173.4 128.7 16.8 12.2 50.2 41.8 73.4 41.4z"></path>
+        </svg>
+      </a>
+    </div>
+    <div class="flex flex-row flex-wrap items-center space-x-4">
+      <a
+        class="flex flex-row text-sm leading-8 underline text-blue-700 hover:opacity-80"
+        href="https://summiz.ai"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Summiz
+      </a>
+      <a
+        class="flex flex-row text-sm leading-8 underline text-blue-700 hover:opacity-80"
+        href="https://moltbook.com"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Moltbook
+      </a>
+      <a
+        class="flex flex-row text-sm leading-8 underline text-blue-700 hover:opacity-80"
+        href="https://github.com/alberduris/npm-history"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         GitHub
       </a>
-      <span>&middot;</span>
-      <span>Open source under MIT</span>
+    </div>
+    <div class="text-xs leading-8 flex flex-row flex-nowrap justify-end items-center">
+      <span class="text-gray-600">
+        Open source under MIT, built by
+        <a class="text-blue-500 hover:opacity-80" href="https://github.com/alberduris" target="_blank" rel="noopener noreferrer">@alberduris</a>
+      </span>
     </div>
   </div>
 </footer>

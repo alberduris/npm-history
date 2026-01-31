@@ -36,7 +36,7 @@ function buildDateChunks(start: Date, end: Date): { start: string; end: string }
 
 async function fetchWithRetry(
   url: string,
-  retries = 3,
+  retries = 5,
   signal?: AbortSignal,
 ): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -44,6 +44,11 @@ async function fetchWithRetry(
       const res = await fetch(url, { signal });
       if (res.status === 404) throw new PackageNotFoundError(url);
       if (res.ok) return res;
+      if (res.status === 429 || res.status >= 500) {
+        if (attempt === retries) throw new Error(`HTTP ${res.status} after ${retries} retries`);
+        await sleep(1000 * Math.pow(2, attempt));
+        continue;
+      }
       if (attempt === retries) throw new Error(`HTTP ${res.status}`);
     } catch (e) {
       if (e instanceof PackageNotFoundError) throw e;
@@ -81,7 +86,7 @@ export async function fetchPackageDownloads(
     const chunk = chunks[i];
     const url = `${API_BASE}/${chunk.start}:${chunk.end}/${encodeURIComponent(packageName)}`;
     try {
-      const res = await fetchWithRetry(url, 3, signal);
+      const res = await fetchWithRetry(url, 5, signal);
       const data = await res.json();
       if (data.downloads) {
         allDownloads.push(...data.downloads);

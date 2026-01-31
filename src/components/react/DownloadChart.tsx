@@ -17,7 +17,7 @@ interface Props {
   chartRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-const EMPTY_STATE_HEIGHT = 320;
+const CHART_ASPECT = '3/2'; // matches chart.xkcd: height = width * 2/3
 const RESIZE_DEBOUNCE = 300;
 
 type LegendPosition = 'upLeft' | 'downRight';
@@ -138,7 +138,7 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
         {hasData ? (
           <svg ref={svgRef} />
         ) : (
-          <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg" style={{ height: EMPTY_STATE_HEIGHT }}>
+          <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg" style={{ aspectRatio: CHART_ASPECT, maxHeight: '100vh' }}>
             <p className="text-gray-400 text-lg font-mono">
               Enter a package name to view download history
             </p>

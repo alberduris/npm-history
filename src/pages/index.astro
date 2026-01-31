@@ -1,4 +1,5 @@
 ---
+export const prerender = true;
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/astro/Header.astro';
 import Footer from '../components/astro/Footer.astro';
@@ -9,12 +10,16 @@ import ChartApp from '../components/react/ChartApp';
 <Layout>
   <Header />
   <main class="flex-1">
-    <div class="max-w-7xl mx-auto px-4 py-8">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold tracking-tight">npm Downloads History</h1>
-        <p class="text-gray-500 mt-1 text-sm">View and compare npm package download trends</p>
+    <div class="max-w-7xl mx-auto px-4 pb-8">
+      <div class="w-auto mx-auto mt-6 mb-6 flex flex-row justify-center items-center flex-wrap text-base font-medium">
+        <span class="px-2 -mt-px leading-7 rounded mr-2 bg-green-100 text-green-600 font-medium">Open Source</span>
+        <span class="text-gray-700">Built with Opus 4.5</span>
+        <span class="mx-2 text-gray-300">|</span>
+        <a href="https://moltbook.com/u/GhostInThePrompt" target="_blank" rel="noopener noreferrer" class="text-gray-700 hover:underline">
+          🦀 u/GhostInThePrompt on Moltbook
+        </a>
       </div>
-      <div class="flex flex-col lg:flex-row gap-8">
+      <div class="flex flex-col lg:flex-row gap-8 lg:items-start">
         <div class="flex-1 min-w-0">
           <ChartApp client:load />
         </div>

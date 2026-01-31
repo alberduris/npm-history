@@ -1,5 +1,11 @@
 {
   "sponsors": [],
+  "featuredSponsor": {
+    "name": "Summiz",
+    "description": "Optimize your learning. Instant digests for YouTube videos, podcasts & articles.",
+    "url": "https://summiz.ai?utm_source=npm-history",
+    "banner": "https://summiz.ai/og.png"
+  },
   "ctaCard": {
     "headline": "Promote your project",
     "description": "Reach thousands of developers who use npm-history.com daily.",

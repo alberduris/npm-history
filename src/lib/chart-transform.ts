@@ -419,3 +419,142 @@ export function formatLogYAxisLabels(svg: SVGSVGElement): void {
     t.textContent = formatDownloads(original);
   }
 }
+
+// =============================================================================
+// Server-side versions (no getBoundingClientRect / getBBox / layout APIs)
+// Identify axes by DOM structure instead of pixel coordinates.
+// chart.xkcd SVG structure:
+//   <g pointer-events="all">
+//     <g transform="translate(0, chartHeight)"> ← X-axis (text-anchor="middle")
+//     <g transform="translate(0, 0)">            ← Y-axis (text-anchor="end")
+// =============================================================================
+
+function findAxisGroup(svg: SVGSVGElement | Element, axis: 'x' | 'y'): Element | null {
+  const container = svg.querySelector('g[pointer-events="all"]');
+  if (!container) return null;
+  for (const child of container.children) {
+    const anchor = child.getAttribute('text-anchor');
+    if (axis === 'x' && anchor === 'middle') return child;
+    if (axis === 'y' && anchor === 'end') return child;
+  }
+  return null;
+}
+
+export function styleXAxisLabelsServer(
+  svg: SVGSVGElement | Element,
+  tickPositions: Set<number>,
+  tickDisplayTexts: Map<number, string>,
+): void {
+  const xAxisGroup = findAxisGroup(svg, 'x');
+  if (!xAxisGroup) return;
+
+  const ticks = xAxisGroup.querySelectorAll('.tick');
+  ticks.forEach((tick, i) => {
+    const text = tick.querySelector('text');
+    if (!text) return;
+
+    if (tickPositions.has(i)) {
+      const display = tickDisplayTexts.get(i);
+      if (display) text.textContent = display;
+    } else {
+      text.setAttribute('style', (text.getAttribute('style') || '') + ' opacity: 0;');
+    }
+  });
+}
+
+export function formatLogYAxisLabelsServer(svg: SVGSVGElement | Element): void {
+  const yAxisGroup = findAxisGroup(svg, 'y');
+  if (!yAxisGroup) return;
+
+  const ticks = yAxisGroup.querySelectorAll('.tick text');
+  for (const t of ticks) {
+    const content = t.textContent?.trim() || '';
+    const logVal = parseFloat(content.replace(/[^0-9.-]/g, ''));
+    if (isNaN(logVal)) continue;
+    const original = Math.pow(10, logVal);
+    t.textContent = formatDownloads(original);
+  }
+}
+
+export function injectWatermarkServer(
+  svg: SVGSVGElement | Element,
+  doc: Document,
+  theme: 'light' | 'dark' = 'light',
+): void {
+  const ns = 'http://www.w3.org/2000/svg';
+  const isDark = theme === 'dark';
+
+  // Get SVG dimensions from attributes
+  const svgWidth = parseFloat(svg.getAttribute('width') || '800');
+  const svgHeight = parseFloat(svg.getAttribute('height') || '500');
+
+  // Find the main chart translate to compute absolute position of xLabel
+  // chart.xkcd uses translate(70, 60) as the chart area offset
+  const mainG = svg.querySelector('g[transform]');
+  let marginLeft = 70;
+  let marginTop = 60;
+  if (mainG) {
+    const match = mainG.getAttribute('transform')?.match(/translate\(([^,]+),\s*([^)]+)\)/);
+    if (match) {
+      marginLeft = parseFloat(match[1]);
+      marginTop = parseFloat(match[2]);
+    }
+  }
+
+  // Find x-axis Y offset (= chart area height)
+  const xAxisGroup = findAxisGroup(svg, 'x');
+  let chartHeight = svgHeight - marginTop - 50; // fallback
+  if (xAxisGroup) {
+    const match = xAxisGroup.getAttribute('transform')?.match(/translate\([^,]*,\s*([^)]+)\)/);
+    if (match) chartHeight = parseFloat(match[1]);
+  }
+
+  // Watermark Y: xLabel is ~40px below x-axis, center vertically with it
+  const refY = marginTop + chartHeight + 40;
+
+  const g = doc.createElementNS(ns, 'g');
+  g.setAttribute('pointer-events', 'none');
+
+  // Inline favicon: "npm" badge
+  const sz = 16;
+  const iconG = doc.createElementNS(ns, 'g');
+  iconG.setAttribute('transform', `translate(0, ${-sz / 2})`);
+
+  const badge = doc.createElementNS(ns, 'rect');
+  badge.setAttribute('width', String(sz));
+  badge.setAttribute('height', String(sz));
+  badge.setAttribute('rx', '2');
+  badge.setAttribute('fill', isDark ? '#e6edf3' : '#1a1a1a');
+  badge.setAttribute('opacity', '0.8');
+  iconG.appendChild(badge);
+
+  const badgeLabel = doc.createElementNS(ns, 'text');
+  badgeLabel.setAttribute('x', String(sz / 2));
+  badgeLabel.setAttribute('y', String(sz * 0.72));
+  badgeLabel.setAttribute('text-anchor', 'middle');
+  badgeLabel.setAttribute('font-family', 'monospace');
+  badgeLabel.setAttribute('font-size', '8');
+  badgeLabel.setAttribute('font-weight', 'bold');
+  badgeLabel.setAttribute('fill', isDark ? '#0d1117' : '#fff');
+  badgeLabel.textContent = 'npm';
+  iconG.appendChild(badgeLabel);
+  g.appendChild(iconG);
+
+  const domain = doc.createElementNS(ns, 'text');
+  domain.setAttribute('x', String(sz + 5));
+  domain.setAttribute('y', '0');
+  domain.setAttribute('dominant-baseline', 'central');
+  domain.setAttribute('font-family', 'xkcd, sans-serif');
+  domain.setAttribute('font-size', '15');
+  domain.setAttribute('fill', isDark ? '#555' : '#888');
+  domain.textContent = 'npm-history.com';
+  g.appendChild(domain);
+
+  // Position: right-aligned, same line as xLabel
+  // "npm-history.com" ≈ 15 chars * 7.5px ≈ 112px + badge 21px = ~133px
+  const watermarkWidth = 140;
+  const tx = svgWidth - watermarkWidth - 10;
+  g.setAttribute('transform', `translate(${tx}, ${refY})`);
+
+  svg.appendChild(g);
+}

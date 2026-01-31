@@ -45,24 +45,29 @@ export default function ExportBar({ chartRef, data, urlState, hasData }: Props) 
   }
 
   const btnClass =
-    'px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-md hover:bg-gray-50 transition-colors cursor-pointer';
+    'ml-2 mb-2 rounded-[.25rem] leading-9 text-sm px-3 cursor-pointer border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-200';
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-row flex-wrap justify-end items-center mt-8 mb-2">
       <button onClick={handlePng} className={btnClass}>
-        PNG
+        <svg className="inline -mt-px mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Image
       </button>
       <button onClick={handleCsv} className={btnClass}>
+        <svg className="inline -mt-px mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         CSV
       </button>
-      <button onClick={handleLink} className={btnClass}>
-        {copied === 'Link' ? 'Copied!' : 'Link'}
-      </button>
       <button onClick={handleEmbed} className={btnClass}>
+        <svg className="inline -mt-px mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         {copied === 'Embed' ? 'Copied!' : 'Embed'}
       </button>
+      <button onClick={handleLink} className={btnClass}>
+        <svg className="inline -mt-px mr-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        {copied === 'Link' ? 'Copied!' : 'Link'}
+      </button>
       <button onClick={handleTwitter} className={btnClass}>
-        Share on 𝕏
+        <svg className="inline -mt-px mr-1" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        Share on X
       </button>
     </div>
   );

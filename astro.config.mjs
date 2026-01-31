@@ -6,7 +6,7 @@ import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://npm-history.com',
-  output: 'static',
+  output: 'server',
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],

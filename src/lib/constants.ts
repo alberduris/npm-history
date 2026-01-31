@@ -1,6 +1,6 @@
 export const API_BASE = 'https://api.npmjs.org/downloads/range';
 export const MAX_CHUNK_DAYS = 365;
-export const CHUNK_DELAY_MS = 100;
+export const CHUNK_DELAY_MS = 250;
 export const NPM_DOWNLOADS_EPOCH = '2015-01-10'; // earliest date npm has download data
 export const MAX_PACKAGES = 8;
 
