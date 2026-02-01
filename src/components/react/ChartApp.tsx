@@ -18,10 +18,9 @@ interface ChartAppProps {
 export default function ChartApp({ embed = false }: ChartAppProps) {
   const [packages, setPackages] = useState<string[]>([]);
   const [chartData, setChartData] = useState<Map<string, PackageChartData>>(new Map());
-  const [loading, setLoading] = useState<Set<string>>(new Set());
+  const [fetchProgress, setFetchProgress] = useState<Map<string, { loaded: number; total: number }>>(new Map());
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
   const [options, setOptions] = useState({ logScale: false, alignTimeline: false });
-  const [fetchProgress, setFetchProgress] = useState<{ pkg: string; loaded: number; total: number } | null>(null);
 
   const chartRef = useRef<HTMLDivElement>(null);
   const abortControllers = useRef<Map<string, AbortController>>(new Map());
@@ -64,13 +63,13 @@ export default function ChartApp({ embed = false }: ChartAppProps) {
       return;
     }
 
-    setLoading((prev) => new Set(prev).add(name));
+    setFetchProgress((prev) => new Map(prev).set(name, { loaded: 0, total: 0 }));
     setErrors((prev) => { const n = new Map(prev); n.delete(name); return n; });
 
     try {
       const result = await fetchAllChunks(name, {
         signal: controller.signal,
-        onProgress: (loaded, total) => setFetchProgress({ pkg: name, loaded, total }),
+        onProgress: (loaded, total) => setFetchProgress((prev) => new Map(prev).set(name, { loaded, total })),
       });
 
       if (!result.complete) {
@@ -89,7 +88,7 @@ export default function ChartApp({ embed = false }: ChartAppProps) {
       const msg = e instanceof PackageNotFoundError ? 'Package not found' : 'Couldn\u2019t load download data';
       setErrors((prev) => new Map(prev).set(name, msg));
     } finally {
-      setLoading((prev) => { const n = new Set(prev); n.delete(name); return n; });
+      setFetchProgress((prev) => { const n = new Map(prev); n.delete(name); return n; });
       abortControllers.current.delete(name);
     }
   }, []);
@@ -97,22 +96,30 @@ export default function ChartApp({ embed = false }: ChartAppProps) {
   // Trigger fetches for packages without data and not errored
   useEffect(() => {
     packages.forEach((pkg, i) => {
-      if (!chartData.has(pkg) && !loading.has(pkg) && !errors.has(pkg)) {
+      if (!chartData.has(pkg) && !fetchProgress.has(pkg) && !errors.has(pkg)) {
         fetchPackage(pkg, i);
       }
     });
-    // Clean up data for removed packages
+    // Clean up state for removed packages
+    const pkgSet = new Set(packages);
     setChartData((prev) => {
       const next = new Map(prev);
       for (const key of next.keys()) {
-        if (!packages.includes(key)) next.delete(key);
+        if (!pkgSet.has(key)) next.delete(key);
+      }
+      return next;
+    });
+    setFetchProgress((prev) => {
+      const next = new Map(prev);
+      for (const key of next.keys()) {
+        if (!pkgSet.has(key)) next.delete(key);
       }
       return next;
     });
     setErrors((prev) => {
       const next = new Map(prev);
       for (const key of next.keys()) {
-        if (!packages.includes(key)) next.delete(key);
+        if (!pkgSet.has(key)) next.delete(key);
       }
       return next;
     });
@@ -141,6 +148,16 @@ export default function ChartApp({ embed = false }: ChartAppProps) {
       if (errors.has(pkg)) handleRetry(pkg);
     }
   }
+
+  const loading = new Set(fetchProgress.keys());
+  const loadingItems = packages
+    .filter((pkg) => fetchProgress.has(pkg))
+    .map((pkg) => ({
+      packageName: pkg,
+      loaded: fetchProgress.get(pkg)!.loaded,
+      total: fetchProgress.get(pkg)!.total,
+      color: COLORS[packages.indexOf(pkg) % COLORS.length],
+    }));
 
   const visibleData = Array.from(chartData.values()).filter((d) => packages.includes(d.packageName));
   // Re-assign colors based on current order
@@ -176,13 +193,7 @@ export default function ChartApp({ embed = false }: ChartAppProps) {
         onRetry={handleRetry}
       />
 
-      {loading.size > 0 && fetchProgress && (
-        <LoadingState
-          loaded={fetchProgress.loaded}
-          total={fetchProgress.total}
-          packageName={fetchProgress.pkg}
-        />
-      )}
+      {loadingItems.length > 0 && <LoadingState items={loadingItems} />}
 
       <DownloadChart
         data={orderedData}
