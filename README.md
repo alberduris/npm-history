@@ -1,7 +1,8 @@
-# npm-history
+<h1 align="center">npm-history</h1>
 
-View and compare npm package download trends in hand-drawn [xkcd](https://xkcd.com)-style charts. Free, open-source, no login required.
+<p align="center">View and compare npm package download trends in hand-drawn <a href="https://xkcd.com">xkcd</a>-style charts. Free, open-source, no login required.</p>
 
+<p align="center">
 <a href="https://npm-history.com/#react&vue&svelte&solid-js">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&theme=dark" />
@@ -9,6 +10,7 @@ View and compare npm package download trends in hand-drawn [xkcd](https://xkcd.c
    <img alt="npm History Chart" src="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js" />
  </picture>
 </a>
+</p>
 
 ## Features
 
