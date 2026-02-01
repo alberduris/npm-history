@@ -3,7 +3,7 @@ import { COLORS } from './constants';
 import { aggregateWeekly } from './data-transform';
 import type { PackageChartData } from './data-transform';
 import { fetchAllChunks } from './fetch';
-import { transformForChart, styleXAxisLabelsServer, formatLogYAxisLabelsServer, injectWatermarkServer } from './chart-transform';
+import { transformForChart, styleXAxisLabelsServer, formatLogYAxisLabelsServer, injectWatermarkServer } from './chart';
 
 // --- Dark theme colors ---
 export const DARK_BG = '#0d1117';

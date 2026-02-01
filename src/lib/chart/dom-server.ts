@@ -1,0 +1,128 @@
+import { formatDownloads } from './format-downloads';
+
+// =============================================================================
+// Server-side versions (no getBoundingClientRect / getBBox / layout APIs)
+// Identify axes by DOM structure instead of pixel coordinates.
+// chart.xkcd SVG structure:
+//   <g pointer-events="all">
+//     <g transform="translate(0, chartHeight)"> ← X-axis (text-anchor="middle")
+//     <g transform="translate(0, 0)">            ← Y-axis (text-anchor="end")
+// =============================================================================
+
+function findAxisGroup(svg: SVGSVGElement | Element, axis: 'x' | 'y'): Element | null {
+  const container = svg.querySelector('g[pointer-events="all"]');
+  if (!container) return null;
+  for (const child of container.children) {
+    const anchor = child.getAttribute('text-anchor');
+    if (axis === 'x' && anchor === 'middle') return child;
+    if (axis === 'y' && anchor === 'end') return child;
+  }
+  return null;
+}
+
+export function styleXAxisLabelsServer(
+  svg: SVGSVGElement | Element,
+  tickPositions: Set<number>,
+  tickDisplayTexts: Map<number, string>,
+): void {
+  const xAxisGroup = findAxisGroup(svg, 'x');
+  if (!xAxisGroup) return;
+
+  const ticks = xAxisGroup.querySelectorAll('.tick');
+  ticks.forEach((tick, i) => {
+    const text = tick.querySelector('text');
+    if (!text) return;
+
+    if (tickPositions.has(i)) {
+      const display = tickDisplayTexts.get(i);
+      if (display) text.textContent = display;
+    } else {
+      text.setAttribute('style', (text.getAttribute('style') || '') + ' opacity: 0;');
+    }
+  });
+}
+
+export function formatLogYAxisLabelsServer(svg: SVGSVGElement | Element): void {
+  const yAxisGroup = findAxisGroup(svg, 'y');
+  if (!yAxisGroup) return;
+
+  const ticks = yAxisGroup.querySelectorAll('.tick text');
+  for (const t of ticks) {
+    const content = t.textContent?.trim() || '';
+    const logVal = parseFloat(content.replace(/[^0-9.-]/g, ''));
+    if (isNaN(logVal)) continue;
+    const original = Math.pow(10, logVal);
+    t.textContent = formatDownloads(original);
+  }
+}
+
+// npm-history hand-drawn icon (80x44 PNG, 2x density for crisp rendering at 29x16)
+const WATERMARK_ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAsCAYAAADy8T8XAAAAAXNSR0IArs4c6QAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAARGVYSWZNTQAqAAAACAABh2kABAAAAAEAAAAaAAAAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAABQoAMABAAAAAEAAAAsAAAAAA3CQYEAABp9SURBVGgFpVt7rGVXWf/23mfv87733OfMnek8O1PKnZYiSIFaMUEl9i8VUkJE9L+m8ofBRIMoSoxGEkGCJoISgjWYqCmhYEEh2FpKWwKGFunMdKa9bYd537nvc889j73P3tvf7/v2OvfcAaKJa2bv9fre61trfWvtcz35/yUP6HwCkVtKIgPkK37RRsrscymQmZmK+NWqtFcCGQw8iSJfarXyVLXayOK4LPnQK4NUrVz2pycno6hcrgG8GoofRlkWVEq+n4G6J75XqkR+uVEP6o3JMKwCoVSSIAxy8YZpkntemudxv9sfbPcHWb/fywbDOM8GifQHg976ZntzZW21F2ZZvLrZWRXfH0iWtaXTiSFsrs++faksL/dQzpwCPy4fV3C8v3z48OG39fP85OL+mZO3pcO7Jvtx3UszyfNMPGClEBU1Dw1+Ln6EPMo8CfNcSlme+sghE54886APIQPPA5znVbIcLXh8T0kFge8HvudLGPhSCgIJ/UBKpQB6ESkQdEqEtiDwJCNzjgvyIIDRAOehj8RgVzQjBx0TLYecOeTI8KSSDlOJ+33pDWKJk0Tr6Ih9LxsGmbcjeZaAeJ4BBZaMl3r9zRf6gyV/pvWfVy5eebTb7V4dNxLLlGZPOnHkyBtmF+Y/ePDggeD1QRC+fth/23xnp1WCQQIYz1A4SEwQ2ArI0cZmVZAZetS+CiYwmPUVucNTFHYZtlFjJzs0yzE2WkBTAcgMjRhDhXFwo8pYDyFUFu20EfMhWzGoGLYiFQIUbOF2nvTSVF7c3pYzGKj2idt+eCMe/NkX/uULn3UozDHldtP09PSpo7ce/Ztf+Zl7X3hv3Dt+cmP1F5udbs3P4DMYlhxCo4SHnmUPlcgxwuzD/9EDFB15a78JDwoCY5ceainqKURJPeZW5nCxbajw4Ify6IERMngcPTJVg9DmsMJ4+6gfeOjiM1SaJg9pU0566VAfzizjz3oJtA5UyrIIj65ut1vl227/pUN3nEr++9nnngaqpnEDBsePH//Y7/z6e9fe+P1nfyFaufHGPIU6HBkohTmnbmI5BWUbchMbOct8tEtzvugnTATV3hEYG6yP/bslA1RY4unDXpZITX1dy0bQ9ViuMA7Z8XbUHRP0c+7QE5WGwvNF6vTOgh8yOgyFP4C+5OLFUnzLoXtqczPnll5aegEIMvLgRqNy7333vWP2tvNnfyrYXD+ZFtrRglhhFJDAZEBWPtr1gUuwTrV0mnKa61Snr5ggTk4CKlwBW4wJ4KzdFDATGU3t0l5lYgRQLxS0HgUivEtKl3rrP5dbzUcb5TaYMQgYim2cMXRVH55JfYyuJ7Hvy+3VSBbOnqkd2r//9+bm5hrkNzLgra+98763z88uZufO3wUm5jhkxH85wHI4K3NF2aseRRyRohCo8eFrL6S27nYqCNootCrlowgMPopJIkioUg7XxF5NBblRx03NNAh2OE1qMKViOhkO+bJkhmKuDcitBE4qjxkzwHx/3TCWxo0bd935lrfcTcLOgMEbTi2+eeqVV24JsHByAaXbYtdU5qqcMqdpi8eh0r0ITyMoW6uyde+83e1mF5OJWeBr3Sg4SmpXVKzOd5GUp3J1LZYXshhFMxTf6nGU37FCXpAAHhkYBxbV0MzRw8dktHau+5NRSRbWVqqby8uLZIrYTdPsQhicjK5eDRASKDmHTgH4nyyUIl62A7KFLByk5W7H056RlIqtsErI0ApsiEj6GBiDKkRWKQqfQIeiICcMeehabBTH3lw2YLCRXPQsGtA2EOIWmpjNQLQQRXsIOw5DWPaPYNCJKZ4fQ8y09vL5FpGcB5aC69erQbeLWYomVXwvKSMyImVklfp4j+uHICPjkak9ZPgjiWx0yiIf0TM6ZkoFKBQrYH4sEdIZU1ZhaBJtLt6kZckGeldebYX7uRY365g7LPZxl54LQ3nNzCw38cKA1WqQXLoaMPrV0VWZKb79owgkM1pU1Ti7hJ3+JsTuACgZNpIzHq1rzgYkRSzKyKxkvEZCQyZ6EKcWk4NRYqMWR4OeCZjiIbBuZUA2GQlnD9spkePGfi0jd1A68o4xWp1MITAnGOUj2RQuN6d2hsO6IioUCYOQw2ANUpGEtfPtWNsoGzDhSJYZynQ9re8yt17gstsqqrBR5oiaaiNCSounHyPMN9docre3UeGbfQaFApKjaRAGrwAK7HoJaPIwptyjM7pUTiUKpKKf1UqSTyErDLjTiXbiqSImNHbsHCXnKcBE6GrNNA6PdYVEphC7CnxyUaOPG8/6VJ6RsFAEzbZuUSmjqGRH1BSDxB11kC74FC0OgmEXSGsr1yeKzj6Vgh1FG/kQaEwiGEtb0Ua4okeJoaVoYh9jwzTN5khLPfDo4snpCDz0nKuoxogAmlAtgaAt84j80ZjhzOrxHMqd2jGhAHgYS2XZUJI40TWiFEV6ulCdCUOiyHEGxlmXpoN6xNP2gjfqWuULTbq0YNYM0RzzkI1UxhmYg0iFhjjrDoZDPMhRtzbmOOWwTgTg8lxdwhOBdwn4pFHGScNHnbrgvkLlS7jlFqIUdkfdlhOerXE6akJoTw2Iy4xaNURRkThuxDWFqOByryf/0dnBZcqM1KenZOrQMWkePS5VlEvlqh76B72utNfXZOvGddm+sSLt1RUQ8eX47LTMXXxFDgypgiebE5PyDGA3+omsX12GwolUsSjP1OoyXalKtRRJVKLkeGAUGtoDzEZnW9pJLG9pNeVwvSEDyPp4ext3P4GklYpEzSnxWy3JG5NSn5mSRrMu9VpDJptNvaSIQYOXCH3oMuj3JMGGubPVlqy9JTny9fVNWVlbl2q3I3dPNmURPJpwEjuVmC2c09O4YRTtg4lxB4Q0MzPVjHDVk6V9lbswvBqR5myDce/E7dm7P/lxv9PpyE4vliTBiRUKMvDlTUgVo9iAR57AbVWrOSHNCQgwMSG4OZK/+tVflveCaQyK7WPHZOGee+Sdd98j25223oh4GPWwFOoNDHdvek+C25IkjiXFaIekXyrL41/+srz8jw/J8XpT1uHdj2HQP/TpT8nRQ0dhrJpUozLubpz01Ox/TxzWOO3nXejU3t6R7c11+cZDD8ny44/D+DX1eHVdtQY8EPIl8Go/CCbke9+j24k0omDGg4IccPM/tSN8UCeXekGGAPswBMWd1P9BQl4VkAaY9QawCaYNvDHhFAKH/bPzcvLIEdAxKMqwN/349isvvJBvwdtoYG6CE2FVDu87IPta06CFVq4eSnMvtZ9Uo1xcgCpBWSqNskw3mp4sLMjLdyzmwbefUT66PCkByATqxOGFBPy+KufOldReaZqGPrxnxFxVK/QDMO/m2gPcOeI+EAmC7k1sY8duAlnzfebSPLAfx0uuH1j34FEZ1iomVXiM1C6+rnV5t9/L0wz3IkjaB3EbE03YKpMKplfWwTTs8s6TtNzQa9XWTGirmwhyJuuBxVBkfae3I9euXyVx9HEdNj3C5qQ09u8DGw31gDZCBSPc6IA/1s7ZpfX1OfXASq3ihdAp26ZlkcbNgXIFBkxwM0PGTpdxYfqDrvz1X/xlfmlpSVqTE/KbH/htufXYcYBgk4CnlBpQWnG5prFN2ToSyo7qra2u5k984xuyfO5FeenMadnAVPmTT3xMjhw5rhp0MQvq09OSYa0NsFaWsa5y09orsFmjvbmZf+rjH8svnj0r5dnZ/AMf/kM5cvio8tza3JRPf/Sj+fPf/Y7g0lqO33Fn/lu//0E5cavxIe3KvoOSXbsGPqBOy47ZBPajM9SwT87osJWjKm53uaPpUX6kmCoN9SrQDgu95/Gmt0ikR6WHuMT9/N9/Tkpf+1f5uR98T17z5BPypx/6sKxBSKoSRViVolCGWJ2IMxz0MLLqyQUlVRiQnvfqpR/Ksw99Tk7926Py7ksX5T5sKo985dERXA+Lf9SaBD68GdSmsPmEeEYJDFSmdJh/9m//TqYee0x+7eIlaX7rKfnKV79KMA6Et7q+Kpe+9EV5fzKQ34XeJ58/LV//2r+PyGCOSLhvbsxolM5oE0hvC/CJAfcGDbWIT48gBOirobVoSGyD6WSyViUuewCjUFqK44F0u335+YOH5QR2vCPYBbdffnkEEWGXzmB4XlCSWX/lBlzdpjBpjSduICdgtIPg1SqH0tpuy8761giEF60lTC96hA/vnMYSjqV1N6l0uEnGTntj+bq86dAt2NnLcnxqCptUEeYCugy3msKmMx1h3cPgzmJpGOx00KMEdLkJMJPw0UHbuAxoHweogELuCT4PKHt8a1APhWHUjAR3ZqKxuH1PwzhOBJjWsZIEcVcLU5Q7MWM0xlh1hBaMp5jK5YqU0iE+MgzA0pf0+nVJ+13tu/m1xr7Ll7hsYo4E0llZkfmWBvwKqkGyBg7c3hgHkgd90Q0owbiDxzI93ZKo0UANOyamaQ87rEsVxn0gwNiR6ynDJMaFLqVYGjLo66xRRKqQn1yZMbdygUWCMArlwMu6WDHBiNBDSDEuJjpRz712u4P4aiBlrBsMtilZo1yG/kYFwbKX9RG5J0PYD8qCTgaju2Q07T3oQslB3/gAvQdDzGMDcoky4uudyshj1xB3c6ku9DdJBj71ZgNeZ6qHoJMi9nSJV/X0GG6Kev7HoLRa065b4gGukzErsVJASbzg7YYAjVGnsyBlOSaxGjBNE3Up0qVliadJa4BExyYCaW4Bros5gwAGphHXT3gMB4DfTiqIBcMQXynxjwzASHcuUk4w4jzxuERRHNEKpjsFYS+/X/QBV4MXWbKTS4ppjeHWk8M2duEOBpB35uOJp4oQnk8JaYUaDBQVA0o4rvcwkYYpahCERi0E/C4xBk0ZKahCVMqKajbiwx6phy9FftkMiE99eQqkAg4INkLOF+kvnV43HwLG3NexgnzwgKgU5JwOKUaGR6dqvc5IHSKqT+PrFo4+ukhgAYZCjq4znEGJNHF6IA18LRYcLSWD18bwHkugDR5d7MCwnjrEFpTcwCni5qSfOrHO4dMrBgMGxHpXi2hQS/wc6sGI6lx4+dWalDHoLlHCeHPLBp+GRgdltYd7Aq480BwP07564KCHD8/dvi49phRIwNx86BEIgPNSVEl5BMKa4gZC+eGTLqYnpjemFgZGB71K442t7t0eTzhmTkVWQEW3V1Hf2tiSp9Y25JHVDXkcxruEtfW5574PnoVUWKs6y8vqfVQ+BZ+dnd21jcTYXob397EUxDhBETeCh40PvI9Tjwev5Izg6u/Dy31sJi5R9N7Vq7pRGWcaT6E1p9EwK7NBFg40IINqmMUJ2hBrjBIRkKDxAAqWp1vDfq9fopfQqEzsr+MMO+x2vYzrF6cWDQVPYaiCy1kQzvLuxho+mHMkMQ0hKGFcIg2tQdM34Yh36Y/+WNY2NiRDvLeInfB1d94BoyC8QiphXer2BqrwME+lOdXCespv4eMJ51QYaIh1uY9zLbY39eY+dkyXcmwiKZhSDvIPqxX73OMAkG8vX5OZQk9rptZAUjxsQIjwEZ911YAYEQxVF2QBAor6AJDE+QKkVJtNOJrdrtgU5NvPJyYnZeOlJYkhLINmHw7aw0F9iI2Cv9zoYfH2d7oIHXBywPTFCAhvZ5jIhx5io5vJ7Nys98CDD2rf3hf9yuB5NmaFEWsFlwcQkzV92ws6IIXbvbyDaYiLT0QBiQy2cWkAAMInmPq69CCG5JodlaPREkMaVcgaIwLgbRENXUxFFhSfm1B/mHTSINnUKbzV7qwNcTmgA0IE0wwFFFFPID/WgZF3oo0yosfzGrWal69vSIIRV1Qw2cGFQ4YgleJud1akia/7lQDC4p8/NYNfupSVNhGUTCEY2IxbwmD0TV4YSC7uakCsQVB8bn5eqpUaegqBVCqDjS5fFRqQwT9/krKxfEPlI50EM2QCmuulD9bsSoDfXYCuS9PVuuzgRgk/ODHJlDt6kVNAGq2fpt3NcKKvHtje2Ii76PSbCHoBQSDTxTAo7IVz58JHvvQIw4M8QgDLa6LpyZZMYH3pQVD6JvdQ/MBHwq0d+eYTT8j+yZn8u194WLhzSnMBFhiKz4DcdFQ+umiBH9sYv125fi2/COUvvfqqLF+/KnG7LSVM0/2Hj8p3n35GXg+voT5UIsFAPfPMU7J87XLeR5nBdSXEdRjkffHM8zIJQ3ErSwDcPXtOPvfRP89L3NCgdYhjIacw6fj9vnf+/Hk5/fyZfIBdffPSZdmHNZ03O8VCpsYDqCaGMZ1BvPnZI+8zA66tr69vw429yQbgbboYKMIOkDhcCb334wg7f/YHuEZsyg6Ir165Ki9fuoK1IJUFCFpF3EWz4/dR8o5GXZY+8hG5gL4AQfTPzkzrpSYZZzQAFnAmGoKDRXvSeZ597tn8uS8/IiUsCa1qQ07BRSo4EiY4VXQQDJ/CLDmK+0T+1IM3cbdfvCA/PHNG+jhO8rTEi1EXXL8ZO8ECNqFhYaR34STS/eIXNWAe4nRyELvyEPLkaA8uXJBbVlYlxmkkWVuV12IQ5iAz4xIaUE0COpSV1qFZ8SuxtYfvl0w1uby1sp7OLiSA4TzbTShzDeCY74Mh0tPPKwVuI5MIBQIsviTGKY/LBkXldNkPwQ7iLlB3clDT+z30cg1g3NgCrkvgiWRM25jqzdNn5KexicScPpyuFByB+TyOeLcBkndxiFqRMHDw9kMzkwU654zNGzLm0sDQiXEDaXANroR15cWd18OSwtCaUzxCQH5ia80CZFzGMlFmXW3hzcpOW40V18AwS1fBJDdN+tn6RLXSAVNgE40KqWkKNG7baNGDO8nhCh0Zr8p1XABO7+LSyeR+oMPhYpMdiQALnN4q+EJoJnod+bgUY4fdhlcnuHVWI8HQxCUPKpTCeJYMh0NmMjgalutveZSz421YdqVWtIEek5NPP1QRHTyYKSV2UkQFNXtQI36ob0RVDVDNgL1ePHf40DBPsNXDg5iUAHJjo03Fq2hBRmI0oX7gYXOB5IoFpFFBH0Xobm7IS0tLCHWyfHNzTadHGSeQQ0eOyerGOjafRNce4+xG34xIAZQmladiNyW22JAVHWjQOnkTxcGPyhwaUjR6PNYpR8Ubg3d4yHUwGUjzx5xIbi55c8eOejkUs6CFXSas/bYEhMkdP6k0r6IHmTjOA0mNLUqVOYVQJNfC44/IEaw5j3zyk7L61rfKrbe/VkrYhM5hAf/6958TD+vdvZiq/NmaS1YyGuqNUFI9vfAghdMGhXQvZ/kCFlDosRmCLjW+UeabwFYb02EkNnQFolbx4rYzwJp/tdtR2zkDJmlzMvZ47kQMx0h8z5iDupEw994l5tTcm1u/vq2D0xBVthzDuvkBLOLbZ5+X/mlsSlib7gbDt8MgJXzM4VLBq39TkugFIkqm5K5k7NVEwipjUScg2/AiXz0V0eDablTYq1XF1ZfyVDBWkXTpAZDeAhUDxrG9jjOiv29hIFeu6S5O2Pa3z7xwI5meFR9HKB+ORuLuIQCDbL/4YRG90vmggxmfUdpGoxUPf23DNibbahDVwHDzCIfmQajJHwtjhxmizIsL9yVs3HiGjbcRR0444265QlB1mywj0IKzwirMHr3YXFApOtlgLdoAioX/6ZgwXLyGKOPA4uIV9tMOTMPT589/5ww8w+dGAQImhRHjmOsRjWZEdK7xU8GHI6IPiOhGggpzEraH2AUw2qghvYwPpzQNxodJtde3U0qbRy9C8aFsxGeun0KKsmODqsKNchZcIizLo7ZRAe0qHTqRw3V1eULZQTCKWOsPvLWFg3kySL9FMs6ALP/Dk+vrg/aBBfzEnX5CxUiKZIzUiFLRRiSOvrEwNjpl2EFgNQyF0f+KTiiDVKCxDpi5MOTuGrUL6UpUcczjwHs3aR/7wcH4OCzCsLeojzcXFHZxDZIYhOfGwnVfa7gxvoD4cLvZfPrRh//pabbRqJpWV1cvHzpxciGfn3/TAs6vEW6QaUCmwoe0ZMIbwfE+E8BMqfyAa22EAg1URnKjwJFjXdt3yY0818HzMKVndBJhgpFtyJDDBUc0USrsrzTpTSaHwWgdRJVVIZi5hVEomgr6JheJ22DgwxgA/itJvDPHjm89e/al9128+OpFijMyICsIcp8J982/sTs7d+sUblha8ET9caLyMEFYpHJ4q8BUQqcqOgzCpnSAdl488jjEDV9z1vHwIol/1sCAlLsYc/aXQElxtN31WztxNIAFDAN73OkoLE8gSgf0jAbrBU3SRTsy5Hggk/IGvvtnmkB29Os6jwbKS51KGIESYtYe9s6vbWx4T1Ybl19t7/zGN7/52JPEYwLaj6SJd73nPX8wN0wePHb92uRJQPBGg9eRPCZRQSbakI/+9gSxIy9dYzDkMYuhJG+eGeQqFKJ5fkvVKy40sJXfT4hDL+feDhBg0mtwqtE+Gw56Cb0AJHXqUrFCBDMM4LkG0xNUMtQ5KLouw3iA99TwaCAM5ecazm82bOdA6ppOQNRJgzlPMTtwIP6Zw9Ob2ytLQemfd8LwE+fOnbsAkFFSnqPaWOH2u+66repn7/RW1u+d8IOjSTwo4/dvNyartS5k8eJ0GPaTod8fphFuN6q4scG3pFKpjCFrlkpes1ING/V6uVHGN+c8x5V1GuIPafBHRRHu9SA0hAt45QVBOTghFULOQ4p6AIxI0zLx/o6Go5EpMI2sX8ygaIrdPAUuByTB5e4Q30GoPM/o/CSAzxvA421njl+jpGk/jjPkWWeAP1nCX94gT/pJ3MbXxXZYKqU48u3g43+Pv3PARdy1a4P4O3F97onLl1/UXZfyjKefaMBxILn//kheeaWE34LsfpkZB3jggfB1Fy5El7e2gvUXX/QEZ9n9J05E9ampSrfT8XHzEczhJnaiWq3hIqua9Dth3ul49cwP6lFUgfHKCNJDXInhb3kyHNAx8XAZ6+f4MwsY38cVC371EvAjENZg/laBHUP8jdQwhgFjD11hxYuiKK9VoyRM8IMSXEpulLDYlGu4gY22l7dXO8tbMBXI1OYa2dL1yz1Z7g5lcTGTU6f68pnP3HwzO67hTyz/D6lGVjTyC92UAAAAAElFTkSuQmCC';
+
+export function injectWatermarkServer(
+  svg: SVGSVGElement | Element,
+  doc: Document,
+  theme: 'light' | 'dark' = 'light',
+): void {
+  const ns = 'http://www.w3.org/2000/svg';
+  const isDark = theme === 'dark';
+
+  // Get SVG dimensions from attributes
+  const svgWidth = parseFloat(svg.getAttribute('width') || '800');
+  const svgHeight = parseFloat(svg.getAttribute('height') || '500');
+
+  // Find the main chart translate to compute absolute position of xLabel
+  // chart.xkcd uses translate(70, 60) as the chart area offset
+  const mainG = svg.querySelector('g[transform]');
+  let marginLeft = 70;
+  let marginTop = 60;
+  if (mainG) {
+    const match = mainG.getAttribute('transform')?.match(/translate\(([^,]+),\s*([^)]+)\)/);
+    if (match) {
+      marginLeft = parseFloat(match[1]);
+      marginTop = parseFloat(match[2]);
+    }
+  }
+
+  // Find x-axis Y offset (= chart area height)
+  const xAxisGroup = findAxisGroup(svg, 'x');
+  let chartHeight = svgHeight - marginTop - 50; // fallback
+  if (xAxisGroup) {
+    const match = xAxisGroup.getAttribute('transform')?.match(/translate\([^,]*,\s*([^)]+)\)/);
+    if (match) chartHeight = parseFloat(match[1]);
+  }
+
+  // Watermark Y: xLabel is ~40px below x-axis, center vertically with it
+  // Clamp so the watermark (icon extends 8px below center) stays within SVG bounds
+  const refY = Math.min(marginTop + chartHeight + 40, svgHeight - 10);
+
+  const g = doc.createElementNS(ns, 'g');
+  g.setAttribute('pointer-events', 'none');
+
+  // npm-history hand-drawn icon (80x44 PNG, 2x density for crisp rendering)
+  const iconH = 16;
+  const iconW = Math.round(iconH * (520 / 284));
+  const icon = doc.createElementNS(ns, 'image');
+  icon.setAttribute('href', WATERMARK_ICON_BASE64);
+  icon.setAttribute('width', String(iconW));
+  icon.setAttribute('height', String(iconH));
+  icon.setAttribute('y', String(-iconH / 2));
+  g.appendChild(icon);
+
+  const domain = doc.createElementNS(ns, 'text');
+  domain.setAttribute('x', String(iconW + 5));
+  domain.setAttribute('y', String(-iconH * 0.15));
+  domain.setAttribute('dominant-baseline', 'central');
+  domain.setAttribute('font-family', 'xkcd, sans-serif');
+  domain.setAttribute('font-size', '15');
+  domain.setAttribute('fill', isDark ? '#555' : '#888');
+  domain.textContent = 'npm-history.com';
+  g.appendChild(domain);
+
+  // Position: right-aligned, same line as xLabel
+  const watermarkWidth = 140;
+  const tx = svgWidth - watermarkWidth - 10;
+  g.setAttribute('transform', `translate(${tx}, ${refY})`);
+
+  svg.appendChild(g);
+}

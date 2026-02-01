@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import type { PackageChartData } from '../../lib/data-transform';
-import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark } from '../../lib/chart-transform';
+import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark } from '../../lib/chart';
 import FetchErrorState from './FetchErrorState';
 
 // @ts-expect-error chart.xkcd has no types
