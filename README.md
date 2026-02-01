@@ -5,9 +5,9 @@
 <p align="center">
 <a href="https://npm-history.com/#react&vue&svelte&solid-js">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&theme=dark&v=2" />
-   <source media="(prefers-color-scheme: light)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&v=2" />
-   <img alt="npm History Chart" src="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&v=2" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&theme=dark&v=3" />
+   <source media="(prefers-color-scheme: light)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&v=3" />
+   <img alt="npm History Chart" src="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&v=3" />
  </picture>
 </a>
 </p>
