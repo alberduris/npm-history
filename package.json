@@ -1,7 +1,16 @@
 {
   "name": "npm-history",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "View and compare npm package download history in hand-drawn xkcd-style charts",
+  "author": "alberduris",
+  "license": "MIT",
+  "homepage": "https://npm-history.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alberduris/npm-history"
+  },
+  "keywords": ["npm", "downloads", "history", "chart", "xkcd", "astro", "react"],
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

@@ -11,7 +11,7 @@
   "ctaCard": {
     "headline": "Promote your project",
     "description": "Reach <s>thousands of</s> developers who use npm-history.com daily.",
-    "url": "mailto:alberduris@summiz.ai",
+    "url": "mailto:alberduris@summiz.ai?subject=I'm interested in sponsoring npm-history.com",
     "buttonText": "Become a sponsor"
   }
 }
