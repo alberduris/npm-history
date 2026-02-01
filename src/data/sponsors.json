@@ -6,6 +6,13 @@
       "image": "https://summiz.ai/og.png",
       "description": "Summiz: Optimize your learning. Instant digests for YouTube videos, podcasts & articles.",
       "active": true
+    },
+    {
+      "name": "Goyani",
+      "url": "https://instagram.com/goyani_bags?utm_source=npm-history",
+      "image": "/assets/goyani.jpeg",
+      "description": "Exclusive designer bags handmade with surplus leather from the industry.",
+      "active": true
     }
   ],
   "ctaCard": {
