@@ -1,0 +1,11 @@
+---
+export const prerender = true;
+import Layout from '../layouts/Layout.astro';
+import ChartApp from '../components/react/ChartApp';
+---
+
+<Layout title="npm history — embed">
+  <main class="p-4">
+    <ChartApp client:load embed />
+  </main>
+</Layout>

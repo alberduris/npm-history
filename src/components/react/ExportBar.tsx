@@ -20,13 +20,15 @@ export default function ExportBar({ chartRef, data, urlState, hasData }: Props) 
     setTimeout(() => setCopied(null), 2000);
   }
 
+  const packages = data.map((d) => d.packageName);
+
   async function handlePng() {
     if (!chartRef.current) return;
-    await exportAsPng(chartRef.current);
+    await exportAsPng(chartRef.current, packages);
   }
 
   function handleCsv() {
-    exportAsCsv(data);
+    exportAsCsv(data, packages);
   }
 
   async function handleLink() {

@@ -1,43 +1,82 @@
-# Astro Starter Kit: Minimal
+# npm-history
 
-```sh
-npm create astro@latest -- --template minimal
+View and compare npm package download trends in hand-drawn [xkcd](https://xkcd.com)-style charts. Free, open-source, no login required.
+
+<a href="https://npm-history.com/#react&vue&svelte&solid-js">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js" />
+   <img alt="npm History Chart" src="https://npm-history.com/api/svg?packages=react,vue,svelte,solid-js" />
+ </picture>
+</a>
+
+## Features
+
+- **xkcd-style charts** — hand-drawn look powered by [chart.xkcd](https://github.com/nicehash/chart.xkcd)
+- **Full npm history** — download data going back to January 2015
+- **Compare up to 8 packages** side by side
+- **Log scale** — compare packages with vastly different download counts
+- **Aligned timeline** — normalize by package age instead of calendar date
+- **Export** — PNG image, CSV data, shareable link, or embed code for your README
+- **Dark theme** — SVG API supports light and dark themes for README embeds
+- **URL sharing** — state is encoded in the URL hash, every chart is a shareable link
+
+## Embed in your README
+
+Add a live-updating download chart to your project's README:
+
+```markdown
+[![npm History Chart](https://npm-history.com/api/svg?packages=YOUR_PACKAGE&type=date)](https://npm-history.com/#YOUR_PACKAGE)
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+With dark theme support:
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```html
+<a href="https://npm-history.com/#YOUR_PACKAGE">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://npm-history.com/api/svg?packages=YOUR_PACKAGE&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://npm-history.com/api/svg?packages=YOUR_PACKAGE" />
+   <img alt="npm History Chart" src="https://npm-history.com/api/svg?packages=YOUR_PACKAGE" />
+ </picture>
+</a>
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## SVG API
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Generate charts server-side via the SVG API:
 
-Any static assets, like images, can be placed in the `public/` directory.
+```
+GET https://npm-history.com/api/svg?packages=react,vue&theme=dark&log=true&align=false
+```
 
-## 🧞 Commands
+| Parameter  | Description                          | Default |
+| :--------- | :----------------------------------- | :------ |
+| `packages` | Comma-separated package names        | —       |
+| `theme`    | `light` or `dark`                    | `light` |
+| `log`      | Log scale (`true` / `false`)         | `false` |
+| `align`    | Align timelines (`true` / `false`)   | `false` |
+| `legend`   | `upLeft` or `downRight`              | `upLeft`|
 
-All commands are run from the root of the project, from a terminal:
+## Development
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+```bash
+pnpm install
+pnpm dev        # http://localhost:4321
+```
 
-## 👀 Want to learn more?
+## Tech Stack
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [Astro](https://astro.build) — full-stack framework
+- [React](https://react.dev) — client-side UI
+- [chart.xkcd](https://github.com/nicehash/chart.xkcd) — hand-drawn charting
+- [Tailwind CSS](https://tailwindcss.com) — styling
+- [Vercel](https://vercel.com) — hosting & serverless
+- [JSDOM](https://github.com/jsdom/jsdom) — server-side SVG rendering
+
+## Contributing
+
+Contributions are welcome. Open an issue or submit a PR.
+
+## License
+
+[MIT](LICENSE)

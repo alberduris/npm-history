@@ -4,18 +4,23 @@ import type { UrlState } from './url-state';
 import { buildHash } from './url-state';
 import { SITE_URL } from './constants';
 
-export async function exportAsPng(element: HTMLElement): Promise<void> {
+function buildFilename(packages: string[], ext: string): string {
+  const date = new Date().toISOString().slice(0, 10);
+  return `npm-history-${packages.join('-')}-${date}.${ext}`;
+}
+
+export async function exportAsPng(element: HTMLElement, packages: string[]): Promise<void> {
   const dataUrl = await toPng(element, {
     pixelRatio: 2,
     backgroundColor: '#ffffff',
   });
   const link = document.createElement('a');
-  link.download = `npm-history-${Date.now()}.png`;
+  link.download = buildFilename(packages, 'png');
   link.href = dataUrl;
   link.click();
 }
 
-export function exportAsCsv(data: PackageChartData[]): void {
+export function exportAsCsv(data: PackageChartData[], packages: string[]): void {
   const allDates = new Set<string>();
   data.forEach((pkg) => pkg.data.forEach((d) => allDates.add(d.weekStart)));
   const sorted = Array.from(allDates).sort();
@@ -34,7 +39,7 @@ export function exportAsCsv(data: PackageChartData[]): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `npm-history-${Date.now()}.csv`;
+  link.download = buildFilename(packages, 'csv');
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -50,7 +55,7 @@ export async function copyShareUrl(state: UrlState): Promise<void> {
 
 export function getEmbedCode(state: UrlState): string {
   const hash = buildHash(state);
-  return `<iframe src="${SITE_URL}/${hash}" width="720" height="440" frameborder="0"></iframe>`;
+  return `<iframe style="width:100%;min-width:600px;height:800px;" src="${SITE_URL}/embed${hash}" frameBorder="0"></iframe>`;
 }
 
 export function getTwitterUrl(state: UrlState): string {

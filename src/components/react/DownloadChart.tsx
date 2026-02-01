@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import type { PackageChartData } from '../../lib/data-transform';
 import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark } from '../../lib/chart-transform';
 
@@ -28,6 +28,14 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
   const [containerWidth, setContainerWidth] = useState(0);
   const [legendPosition, setLegendPosition] = useState<LegendPosition>('upLeft');
   const hasData = data.length > 0;
+
+  // Merge chartRef (export target) and containerRef (resize observer) onto the same element
+  const chartContainerRef = useCallback((el: HTMLDivElement | null) => {
+    containerRef.current = el;
+    if (chartRef && 'current' in chartRef) {
+      (chartRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    }
+  }, [chartRef]);
 
   // Responsive: track container width changes
   useEffect(() => {
@@ -90,9 +98,9 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
   }, [data, options, containerWidth, hasData, legendPosition]);
 
   return (
-    <div ref={chartRef} className="bg-white rounded-lg">
+    <div className="bg-white rounded-lg">
       {hasData && (
-        <div className="flex items-center justify-between px-1 pb-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-1 pb-1">
           <div className="flex flex-row items-center rounded leading-8 text-sm px-3 text-gray-600 select-none">
             <span className="mr-2">Legend</span>
             <label className="mr-2 cursor-pointer hover:opacity-80 flex items-center">
@@ -134,7 +142,7 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
           </div>
         </div>
       )}
-      <div ref={containerRef} className="relative">
+      <div ref={chartContainerRef} className="relative">
         {hasData ? (
           <svg ref={svgRef} />
         ) : (

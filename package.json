@@ -15,6 +15,7 @@
     "@types/jsdom": "^27.0.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
+    "@vercel/og": "^0.8.6",
     "astro": "^5.17.1",
     "chart.xkcd": "^1.1.15",
     "dayjs": "^1.11.19",

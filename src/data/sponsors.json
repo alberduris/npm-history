@@ -8,8 +8,8 @@
   },
   "ctaCard": {
     "headline": "Promote your project",
-    "description": "Reach thousands of developers who use npm-history.com daily.",
-    "url": "mailto:sponsor@npm-history.com",
+    "description": "Reach <s>thousands of</s> developers who use npm-history.com daily.",
+    "url": "mailto:alberduris@summiz.ai",
     "buttonText": "Become a sponsor"
   }
 }

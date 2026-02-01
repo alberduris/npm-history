@@ -11,7 +11,11 @@ import type { PackageChartData } from '../../lib/data-transform';
 import { COLORS } from '../../lib/constants';
 import { parseHash, buildHash, subscribeToHashChange } from '../../lib/url-state';
 
-export default function ChartApp() {
+interface ChartAppProps {
+  embed?: boolean;
+}
+
+export default function ChartApp({ embed = false }: ChartAppProps) {
   const [packages, setPackages] = useState<string[]>([]);
   const [chartData, setChartData] = useState<Map<string, PackageChartData>>(new Map());
   const [loading, setLoading] = useState<Set<string>>(new Set());
@@ -104,6 +108,10 @@ export default function ChartApp() {
   }));
 
   const urlState = { packages, logScale: options.logScale, alignTimeline: options.alignTimeline };
+
+  if (embed) {
+    return <DownloadChart data={orderedData} options={options} onOptionsChange={setOptions} chartRef={chartRef} />;
+  }
 
   return (
     <div className="space-y-4">
