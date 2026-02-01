@@ -6,10 +6,7 @@ const activeSponsors = sponsors.sponsors.filter((s: any) => s.active);
 const cta = sponsors.ctaCard;
 ---
 
-<aside class="w-full lg:w-72 shrink-0 space-y-4">
-  {activeSponsors.length > 0 && (
-    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Sponsors</h3>
-  )}
+<aside class="w-full lg:w-72 shrink-0 space-y-2 lg:sticky lg:top-4">
   {activeSponsors.map((sponsor: any) => (
     <SponsorCard sponsor={sponsor} />
   ))}

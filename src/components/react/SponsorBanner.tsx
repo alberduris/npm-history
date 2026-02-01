@@ -1,14 +1,15 @@
 import sponsorData from '../../data/sponsors.json';
 
-interface FeaturedSponsor {
+interface Sponsor {
   name: string;
   description: string;
   url: string;
-  banner: string;
+  image: string;
+  active: boolean;
 }
 
 export default function SponsorBanner() {
-  const sponsor = sponsorData.featuredSponsor as FeaturedSponsor | null;
+  const sponsor = (sponsorData.sponsors as Sponsor[]).find(s => s.active);
   if (!sponsor) return null;
 
   return (
@@ -27,7 +28,7 @@ export default function SponsorBanner() {
         <div className="hover:opacity-80">
           <img
             className="w-auto max-w-full rounded"
-            src={sponsor.banner}
+            src={sponsor.image}
             alt={sponsor.name}
             loading="lazy"
           />
