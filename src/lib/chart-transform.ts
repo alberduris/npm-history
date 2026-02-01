@@ -353,36 +353,20 @@ export function injectWatermark(svg: SVGSVGElement): void {
   const g = document.createElementNS(ns, 'g');
   g.setAttribute('pointer-events', 'none');
 
-  // Inline favicon: "npm" badge
-  const sz = 16;
-  const iconG = document.createElementNS(ns, 'g');
-  iconG.setAttribute('transform', `translate(0, ${-sz / 2})`);
+  // npm icon
+  const iconH = 16;
+  const iconW = Math.round(iconH * (520 / 284));
+  const icon = document.createElementNS(ns, 'image');
+  icon.setAttribute('href', '/assets/npm-icon.png');
+  icon.setAttribute('width', String(iconW));
+  icon.setAttribute('height', String(iconH));
+  icon.setAttribute('y', String(-iconH / 2));
+  g.appendChild(icon);
 
-  const badge = document.createElementNS(ns, 'rect');
-  badge.setAttribute('width', String(sz));
-  badge.setAttribute('height', String(sz));
-  badge.setAttribute('rx', '2');
-  badge.setAttribute('fill', '#1a1a1a');
-  badge.setAttribute('opacity', '0.8');
-  iconG.appendChild(badge);
-
-  const badgeLabel = document.createElementNS(ns, 'text');
-  badgeLabel.setAttribute('x', String(sz / 2));
-  badgeLabel.setAttribute('y', String(sz * 0.72));
-  badgeLabel.setAttribute('text-anchor', 'middle');
-  badgeLabel.setAttribute('font-family', 'monospace');
-  badgeLabel.setAttribute('font-size', '8');
-  badgeLabel.setAttribute('font-weight', 'bold');
-  badgeLabel.setAttribute('fill', '#fff');
-  badgeLabel.textContent = 'npm';
-  iconG.appendChild(badgeLabel);
-
-  g.appendChild(iconG);
-
-  // Domain text in hand-drawn font
+  // Domain text in hand-drawn font, vertically centered with icon
   const domain = document.createElementNS(ns, 'text');
-  domain.setAttribute('x', String(sz + 5));
-  domain.setAttribute('y', '0');
+  domain.setAttribute('x', String(iconW + 5));
+  domain.setAttribute('y', String(-iconH * 0.15));
   domain.setAttribute('dominant-baseline', 'central');
   domain.setAttribute('font-family', 'xkcd, sans-serif');
   domain.setAttribute('font-size', '15');
@@ -515,34 +499,19 @@ export function injectWatermarkServer(
   const g = doc.createElementNS(ns, 'g');
   g.setAttribute('pointer-events', 'none');
 
-  // Inline favicon: "npm" badge
-  const sz = 16;
-  const iconG = doc.createElementNS(ns, 'g');
-  iconG.setAttribute('transform', `translate(0, ${-sz / 2})`);
-
-  const badge = doc.createElementNS(ns, 'rect');
-  badge.setAttribute('width', String(sz));
-  badge.setAttribute('height', String(sz));
-  badge.setAttribute('rx', '2');
-  badge.setAttribute('fill', isDark ? '#e6edf3' : '#1a1a1a');
-  badge.setAttribute('opacity', '0.8');
-  iconG.appendChild(badge);
-
-  const badgeLabel = doc.createElementNS(ns, 'text');
-  badgeLabel.setAttribute('x', String(sz / 2));
-  badgeLabel.setAttribute('y', String(sz * 0.72));
-  badgeLabel.setAttribute('text-anchor', 'middle');
-  badgeLabel.setAttribute('font-family', 'monospace');
-  badgeLabel.setAttribute('font-size', '8');
-  badgeLabel.setAttribute('font-weight', 'bold');
-  badgeLabel.setAttribute('fill', isDark ? '#0d1117' : '#fff');
-  badgeLabel.textContent = 'npm';
-  iconG.appendChild(badgeLabel);
-  g.appendChild(iconG);
+  // npm icon (base64 embedded for server-side rendering)
+  const iconH = 16;
+  const iconW = Math.round(iconH * (520 / 284));
+  const icon = doc.createElementNS(ns, 'image');
+  icon.setAttribute('href', 'data:image/png;base64,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');
+  icon.setAttribute('width', String(iconW));
+  icon.setAttribute('height', String(iconH));
+  icon.setAttribute('y', String(-iconH / 2));
+  g.appendChild(icon);
 
   const domain = doc.createElementNS(ns, 'text');
-  domain.setAttribute('x', String(sz + 5));
-  domain.setAttribute('y', '0');
+  domain.setAttribute('x', String(iconW + 5));
+  domain.setAttribute('y', String(-iconH * 0.15));
   domain.setAttribute('dominant-baseline', 'central');
   domain.setAttribute('font-family', 'xkcd, sans-serif');
   domain.setAttribute('font-size', '15');
