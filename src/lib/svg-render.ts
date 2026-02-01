@@ -116,7 +116,7 @@ export async function renderChart(
   }
 
   const WIDTH = 800;
-  const HEIGHT = 500;
+  const HEIGHT = 530;
 
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="wrap"><svg class="chart"></svg></div></body></html>', {
     pretendToBeVisual: true,
