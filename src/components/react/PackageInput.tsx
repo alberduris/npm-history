@@ -9,13 +9,21 @@ interface Props {
   onRemove: (name: string) => void;
 }
 
+function extractPackageName(raw: string): string {
+  const s = raw.trim().toLowerCase();
+  // Match npmjs.com URLs: https://www.npmjs.com/package/react or npmjs.com/package/@scope/name
+  const match = s.match(/(?:https?:\/\/)?(?:www\.)?npmjs\.com\/package\/((?:@[^/]+\/)?[^/?#]+)/);
+  if (match) return match[1];
+  return s;
+}
+
 export default function PackageInput({ packages, loading, errors, onAdd, onRemove }: Props) {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const name = input.trim().toLowerCase();
+    const name = extractPackageName(input);
     if (!name || packages.includes(name) || packages.length >= MAX_PACKAGES) return;
     onAdd(name);
     setInput('');
@@ -30,7 +38,7 @@ export default function PackageInput({ packages, loading, errors, onAdd, onRemov
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="react, vue, next, @tanstack/react-query..."
+          placeholder={packages.length > 0 ? "...add next package" : "react or npmjs.com/package/react or https://www.npmjs.com/package/react"}
           className="flex-1 px-4 py-2.5 border-2 border-gray-800 rounded-lg font-mono text-sm
                      focus:outline-none focus:border-blue-500 bg-white"
         />
