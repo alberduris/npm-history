@@ -10,7 +10,15 @@
     "type": "git",
     "url": "https://github.com/alberduris/npm-history"
   },
-  "keywords": ["npm", "downloads", "history", "chart", "xkcd", "astro", "react"],
+  "keywords": [
+    "npm",
+    "downloads",
+    "history",
+    "chart",
+    "xkcd",
+    "astro",
+    "react"
+  ],
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -21,14 +29,14 @@
     "@astrojs/react": "^4.4.2",
     "@astrojs/vercel": "^9.0.4",
     "@tailwindcss/vite": "^4.1.18",
-    "@types/jsdom": "^27.0.0",
+    "@types/jsdom": "21.1.7",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "astro": "^5.17.1",
     "chart.xkcd": "^1.1.15",
     "dayjs": "^1.11.19",
     "html-to-image": "^1.11.13",
-    "jsdom": "^27.4.0",
+    "jsdom": "24.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.1.18"
