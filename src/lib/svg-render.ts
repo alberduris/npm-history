@@ -1,8 +1,8 @@
 import { JSDOM } from 'jsdom';
-import { API_BASE, MAX_CHUNK_DAYS, NPM_DOWNLOADS_EPOCH, COLORS } from './constants';
+import { COLORS } from './constants';
 import { aggregateWeekly } from './data-transform';
 import type { PackageChartData } from './data-transform';
-import type { DailyDownload } from './npm-api';
+import { fetchAllChunks } from './fetch';
 import { transformForChart, styleXAxisLabelsServer, formatLogYAxisLabelsServer, injectWatermarkServer } from './chart-transform';
 
 // --- Dark theme colors ---
@@ -10,87 +10,25 @@ export const DARK_BG = '#0d1117';
 export const DARK_STROKE = '#e6edf3';
 export const DARK_COLORS = ['#ff7b72', '#79c0ff', '#ffa657', '#7ee787', '#d2a8ff', '#ff9bce', '#76e4f7', '#ffc658'];
 
-// --- npm API helpers (server-side, no cache) ---
-
-function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function buildDateChunks(start: Date, end: Date): { start: string; end: string }[] {
-  const chunks: { start: string; end: string }[] = [];
-  const current = new Date(start);
-  while (current < end) {
-    const chunkEnd = new Date(current);
-    chunkEnd.setDate(chunkEnd.getDate() + MAX_CHUNK_DAYS - 1);
-    if (chunkEnd > end) chunkEnd.setTime(end.getTime());
-    chunks.push({ start: formatDate(current), end: formatDate(chunkEnd) });
-    current.setTime(chunkEnd.getTime());
-    current.setDate(current.getDate() + 1);
-  }
-  return chunks;
-}
-
-async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(url);
-      if (res.status === 404) throw new Error(`404: ${url}`);
-      if (res.ok) return res;
-      if (res.status === 429 || res.status >= 500) {
-        if (attempt === retries) throw new Error(`HTTP ${res.status} after ${retries} retries`);
-        await sleep(1000 * Math.pow(2, attempt));
-        continue;
-      }
-      if (attempt === retries) throw new Error(`HTTP ${res.status}`);
-    } catch (e) {
-      if (attempt === retries) throw e;
-    }
-    await sleep(500 * Math.pow(2, attempt));
-  }
-  throw new Error('Unreachable');
-}
-
-export async function fetchPackageServer(packageName: string): Promise<DailyDownload[]> {
-  const end = new Date();
-  const start = new Date(NPM_DOWNLOADS_EPOCH);
-  const chunks = buildDateChunks(start, end);
-  const allDownloads: DailyDownload[] = [];
-  let failedChunks = 0;
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    const url = `${API_BASE}/${chunk.start}:${chunk.end}/${encodeURIComponent(packageName)}`;
-    try {
-      const res = await fetchWithRetry(url);
-      const data = await res.json();
-      if (data.downloads) {
-        allDownloads.push(...data.downloads);
-      }
-    } catch (e) {
-      failedChunks++;
-      console.error(`[svg-api] chunk ${i + 1}/${chunks.length} failed for ${packageName} (${chunk.start}:${chunk.end}): ${(e as Error).message}`);
-    }
-    if (i < chunks.length - 1) await sleep(250);
-  }
-
-  if (failedChunks > 0) {
-    console.warn(`[svg-api] ${packageName}: ${failedChunks}/${chunks.length} chunks failed`);
-  }
-
-  return allDownloads;
-}
-
 // --- Fetch + aggregate multiple packages ---
 
-export async function fetchAndPreparePackages(packageNames: string[]): Promise<PackageChartData[]> {
+export async function fetchAndPreparePackages(
+  packageNames: string[],
+): Promise<{ data: PackageChartData[]; allComplete: boolean }> {
+  let allComplete = true;
+
   const results = await Promise.all(
     packageNames.map(async (name, i) => {
-      const daily = await fetchPackageServer(name);
-      const weekly = aggregateWeekly(daily);
+      const result = await fetchAllChunks(name);
+
+      if (!result.complete) {
+        allComplete = false;
+        const failed = result.chunks.filter((c) => c.status === 'failed').length;
+        console.warn(`[svg-api] ${name}: ${failed}/${result.chunks.length} chunks failed`);
+        return null;
+      }
+
+      const weekly = aggregateWeekly(result.downloads);
       return {
         packageName: name,
         color: COLORS[i % COLORS.length],
@@ -98,7 +36,9 @@ export async function fetchAndPreparePackages(packageNames: string[]): Promise<P
       } as PackageChartData;
     }),
   );
-  return results.filter((r) => r.data.length > 0);
+
+  const data = results.filter((r): r is PackageChartData => r !== null && r.data.length > 0);
+  return { data, allComplete };
 }
 
 // --- SVG rendering with JSDOM + chart.xkcd ---
@@ -121,7 +61,7 @@ export async function renderChart(
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="wrap"><svg class="chart"></svg></div></body></html>', {
     pretendToBeVisual: true,
   });
-  const { document, SVGElement, HTMLElement: JSDOMHTMLElement } = dom.window;
+  const { document, SVGElement } = dom.window;
   const svg = document.querySelector('svg')!;
   const wrap = document.getElementById('wrap')!;
 

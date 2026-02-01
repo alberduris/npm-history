@@ -7,6 +7,7 @@ interface Props {
   errors: Map<string, string>;
   onAdd: (name: string) => void;
   onRemove: (name: string) => void;
+  onRetry: (name: string) => void;
 }
 
 function extractPackageName(raw: string): string {
@@ -17,7 +18,7 @@ function extractPackageName(raw: string): string {
   return s;
 }
 
-export default function PackageInput({ packages, loading, errors, onAdd, onRemove }: Props) {
+export default function PackageInput({ packages, loading, errors, onAdd, onRemove, onRetry }: Props) {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -68,7 +69,14 @@ export default function PackageInput({ packages, loading, errors, onAdd, onRemov
               )}
               {pkg}
               {errors.has(pkg) && (
-                <span title={errors.get(pkg)} className="text-red-500">!</span>
+                <button
+                  onClick={() => onRetry(pkg)}
+                  title={`${errors.get(pkg)} \u2014 click to retry`}
+                  className="text-red-500 hover:text-red-700 cursor-pointer transition-colors"
+                  aria-label={`Retry ${pkg}`}
+                >
+                  !
+                </button>
               )}
               <button
                 onClick={() => onRemove(pkg)}

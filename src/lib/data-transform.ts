@@ -1,4 +1,4 @@
-import type { DailyDownload } from './npm-api';
+import type { DailyDownload } from './fetch';
 
 export interface WeeklyDataPoint {
   weekStart: string;

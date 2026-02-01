@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import type { PackageChartData } from '../../lib/data-transform';
 import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark } from '../../lib/chart-transform';
+import FetchErrorState from './FetchErrorState';
 
 // @ts-expect-error chart.xkcd has no types
 import chartXkcd from 'chart.xkcd';
@@ -15,6 +16,8 @@ interface Props {
   options: ChartOptions;
   onOptionsChange: (options: ChartOptions) => void;
   chartRef?: React.RefObject<HTMLDivElement | null>;
+  hasErrors?: boolean;
+  onRetry?: () => void;
 }
 
 const CHART_ASPECT = '3/2'; // matches chart.xkcd: height = width * 2/3
@@ -22,7 +25,7 @@ const RESIZE_DEBOUNCE = 300;
 
 type LegendPosition = 'upLeft' | 'downRight';
 
-export default function DownloadChart({ data, options, onOptionsChange, chartRef }: Props) {
+export default function DownloadChart({ data, options, onOptionsChange, chartRef, hasErrors, onRetry }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -97,6 +100,23 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
     }
   }, [data, options, containerWidth, hasData, legendPosition]);
 
+  // Chart area: 3 states
+  function renderChartArea() {
+    if (hasData) {
+      return <svg ref={svgRef} />;
+    }
+    if (hasErrors && onRetry) {
+      return <FetchErrorState onRetry={onRetry} />;
+    }
+    return (
+      <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg" style={{ aspectRatio: CHART_ASPECT, maxHeight: '100vh' }}>
+        <p className="text-gray-400 text-lg font-mono">
+          Enter a package name to view download history
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg">
       {hasData && (
@@ -143,15 +163,7 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
         </div>
       )}
       <div ref={chartContainerRef} className="relative">
-        {hasData ? (
-          <svg ref={svgRef} />
-        ) : (
-          <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg" style={{ aspectRatio: CHART_ASPECT, maxHeight: '100vh' }}>
-            <p className="text-gray-400 text-lg font-mono">
-              Enter a package name to view download history
-            </p>
-          </div>
-        )}
+        {renderChartArea()}
       </div>
     </div>
   );
