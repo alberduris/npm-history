@@ -7,7 +7,7 @@ interface Props {
 }
 
 const {
-  title = `${SITE_NAME} — npm Package Download History Charts`,
+  title = `npm Download History — npm Package Download History Charts`,
   description = SITE_DESCRIPTION,
 } = Astro.props;
 ---
@@ -19,10 +19,11 @@ const {
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={SITE_URL} />
-<meta property="og:image" content={`${SITE_URL}/api/og`} />
+<meta property="og:image" content={`${SITE_URL}/assets/og.webp`} />
 <meta property="og:site_name" content={SITE_NAME} />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image" content={`${SITE_URL}/api/og`} />
+<meta name="twitter:image" content={`${SITE_URL}/assets/og.webp`} />
+<meta name="twitter:url" content={SITE_URL} />
 <meta name="twitter:creator" content="@alberduris" />
