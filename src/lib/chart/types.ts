@@ -11,8 +11,23 @@ export interface ChartOptions {
   alignTimeline: boolean;
 }
 
+export interface ChartLayout {
+  widthPx: number;
+  heightPx: number;
+  marginLeft: number;
+  marginRight: number;
+  fontSize: number;
+  minTickGapPx: number;
+}
+
 export interface LabelResult {
   labels: string[];
+  tickPositions: Set<number>;
+  tickDisplayTexts: Map<number, string>;
+}
+
+export interface TickPolicy {
+  xTickCount: number;
   tickPositions: Set<number>;
   tickDisplayTexts: Map<number, string>;
 }
@@ -21,6 +36,14 @@ export interface LabelResult {
 export interface ClipRange {
   startIndex: number;
   endIndex: number;
+}
+
+export interface ChartModel {
+  chartData: ChartXkcdData;
+  yTickCount: number;
+  maxLogValue: number;
+  tickPolicy: TickPolicy;
+  clipRanges: ClipRange[];
 }
 
 export interface TransformResult {

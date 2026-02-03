@@ -1,6 +1,15 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import type { PackageChartData } from '../../lib/data-transform';
-import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark, applyLineClipping } from '../../lib/chart';
+import {
+  applyLineClipping,
+  applyXAxisTickPolicy,
+  buildChartLayout,
+  buildChartModel,
+  computeClipRects,
+  cullOverlappingXAxisLabels,
+  formatLogYAxisLabels,
+  injectWatermark,
+} from '../../lib/chart';
 import FetchErrorState from './FetchErrorState';
 
 // @ts-expect-error chart.xkcd has no types
@@ -69,29 +78,30 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
 
     svg.innerHTML = '';
 
-    const { chartData, yTickCount, tickPositions, tickDisplayTexts, clipRanges } = transformForChart(data, options);
+    const heightPx = Math.min((containerWidth * 2) / 3, window.innerHeight || (containerWidth * 2) / 3);
+    const layout = buildChartLayout({ widthPx: containerWidth, heightPx });
+    const model = buildChartModel(data, options, layout);
 
-    if (chartData.labels.length === 0) return;
+    if (model.chartData.labels.length === 0) return;
 
     new chartXkcd.Line(svg, {
       title: 'npm history',
       xLabel: options.alignTimeline ? 'Timeline' : 'Date',
       yLabel: options.logScale ? 'Weekly Downloads (log)' : 'Weekly Downloads',
-      data: chartData,
+      data: model.chartData,
       options: {
-        yTickCount,
-        xTickCount: 6,
+        yTickCount: model.yTickCount,
+        xTickCount: model.tickPolicy.xTickCount,
         legendPosition: chartXkcd.config.positionType[legendPosition],
         dataColors: data.map((d) => d.color),
         showLegend: true,
       },
     });
 
-    // Style x-axis labels immediately (text content exists synchronously):
-    // reformat tick labels to short display format, hide the rest.
-    // Log Y-axis hack must wait for D3 transitions (~350ms).
-    styleXAxisLabels(svg, tickPositions, tickDisplayTexts);
-    applyLineClipping(svg, clipRanges, chartData.labels.length);
+    applyXAxisTickPolicy(svg, model.tickPolicy);
+    cullOverlappingXAxisLabels(svg, { minGapPx: layout.minTickGapPx });
+    const clipRects = computeClipRects(model.clipRanges, model.chartData.labels.length, layout);
+    applyLineClipping(svg, clipRects);
     injectWatermark(svg);
 
     if (options.logScale) {

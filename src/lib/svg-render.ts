@@ -3,7 +3,15 @@ import { COLORS } from './constants';
 import { aggregateWeekly } from './data-transform';
 import type { PackageChartData } from './data-transform';
 import { fetchAllChunks } from './fetch';
-import { transformForChart, styleXAxisLabelsServer, formatLogYAxisLabelsServer, injectWatermarkServer, applyLineClippingServer } from './chart';
+import {
+  applyLineClippingServer,
+  applyXAxisTickPolicy,
+  buildChartLayout,
+  buildChartModel,
+  computeClipRects,
+  formatLogYAxisLabelsServer,
+  injectWatermarkServer,
+} from './chart';
 
 // --- Dark theme colors ---
 export const DARK_BG = '#0d1117';
@@ -50,13 +58,14 @@ export async function renderChart(
   legendPosition: string,
   { showLegend = true }: { showLegend?: boolean } = {},
 ): Promise<string> {
-  const { chartData, yTickCount, tickPositions, tickDisplayTexts, clipRanges } = transformForChart(seriesData, options);
-  if (chartData.labels.length === 0) {
+  const layout = buildChartLayout({ widthPx: 800, heightPx: 530 });
+  const model = buildChartModel(seriesData, options, layout);
+  if (model.chartData.labels.length === 0) {
     return '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="440"><text x="360" y="220" text-anchor="middle" fill="#888">No data available</text></svg>';
   }
 
-  const WIDTH = 800;
-  const HEIGHT = 530;
+  const WIDTH = layout.widthPx;
+  const HEIGHT = layout.heightPx;
 
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="wrap"><svg class="chart"></svg></div></body></html>', {
     pretendToBeVisual: true,
@@ -100,10 +109,10 @@ export async function renderChart(
       title: 'npm history',
       xLabel: options.alignTimeline ? 'Timeline' : 'Date',
       yLabel: options.logScale ? 'Weekly Downloads (log)' : 'Weekly Downloads',
-      data: chartData,
+      data: model.chartData,
       options: {
-        yTickCount,
-        xTickCount: 6,
+        yTickCount: model.yTickCount,
+        xTickCount: model.tickPolicy.xTickCount,
         legendPosition: chartXkcd.config.positionType[legendPosition] ?? chartXkcd.config.positionType.upLeft,
         dataColors: seriesData.map((_, i) => colors[i % colors.length]),
         showLegend,
@@ -112,8 +121,9 @@ export async function renderChart(
       },
     });
 
-    styleXAxisLabelsServer(svg, tickPositions, tickDisplayTexts);
-    applyLineClippingServer(svg, document, clipRanges, chartData.labels.length);
+    applyXAxisTickPolicy(svg, model.tickPolicy);
+    const clipRects = computeClipRects(model.clipRanges, model.chartData.labels.length, layout);
+    applyLineClippingServer(svg, document, clipRects);
     if (options.logScale) {
       formatLogYAxisLabelsServer(svg);
     }
