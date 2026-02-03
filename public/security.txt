@@ -1,0 +1,4 @@
+Contact: mailto:alberduris@summiz.ai
+Preferred-Languages: es, en
+Expires: 2027-02-03T00:00:00.000Z
+Canonical: https://npm-history.com/.well-known/security.txt

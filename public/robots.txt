@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://npm-history.com/sitemap.xml
