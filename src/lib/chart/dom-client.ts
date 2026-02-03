@@ -1,6 +1,18 @@
 import { formatDownloads } from './format-downloads';
+import type { ClipRange } from './types';
 
 // --- Post-render DOM hacks (client-side, uses getBoundingClientRect / getBBox) ---
+
+function findAxisGroup(svg: SVGSVGElement | Element, axis: 'x' | 'y'): Element | null {
+  const container = svg.querySelector('g[pointer-events="all"]');
+  if (!container) return null;
+  for (const child of Array.from(container.children)) {
+    const anchor = child.getAttribute('text-anchor');
+    if (axis === 'x' && anchor === 'middle') return child;
+    if (axis === 'y' && anchor === 'end') return child;
+  }
+  return null;
+}
 
 export function styleXAxisLabels(
   svg: SVGSVGElement,
@@ -8,16 +20,19 @@ export function styleXAxisLabels(
   tickDisplayTexts: Map<number, string>,
 ): void {
   const svgRect = svg.getBoundingClientRect();
-  const allTicks = svg.querySelectorAll('.tick');
+  const xAxisGroup = findAxisGroup(svg, 'x');
+  const xAxisTicks = xAxisGroup ? Array.from(xAxisGroup.querySelectorAll('.tick')) : [];
 
-  // Collect x-axis ticks by position (bottom ~10%), preserving DOM order = label order
-  const xAxisTicks: Element[] = [];
-  for (const tick of allTicks) {
-    const text = tick.querySelector('text');
-    if (!text) continue;
-    const rect = text.getBoundingClientRect();
-    const relY = rect.y - svgRect.y;
-    if (relY > svgRect.height * 0.9) xAxisTicks.push(tick);
+  if (xAxisTicks.length === 0) {
+    // Fallback: Collect x-axis ticks by position (bottom ~10%), preserving DOM order = label order
+    const allTicks = svg.querySelectorAll('.tick');
+    for (const tick of allTicks) {
+      const text = tick.querySelector('text');
+      if (!text) continue;
+      const rect = text.getBoundingClientRect();
+      const relY = rect.y - svgRect.y;
+      if (relY > svgRect.height * 0.9) xAxisTicks.push(tick);
+    }
   }
 
   // Index-based: Nth x-axis tick = labels[N]
@@ -34,6 +49,38 @@ export function styleXAxisLabels(
       text.style.opacity = '0';
     }
   });
+
+  // Hide overlapping visible ticks (mobile-safe)
+  const visibleTicks = xAxisTicks
+    .map((tick) => tick.querySelector('text') as SVGTextElement | null)
+    .filter((text): text is SVGTextElement => {
+      if (!text) return false;
+      if (!text.textContent?.trim()) return false;
+      return text.style.opacity !== '0';
+    })
+    .map((text) => ({ text, rect: text.getBoundingClientRect() }))
+    .sort((a, b) => a.rect.x - b.rect.x);
+
+  if (visibleTicks.length <= 2) return;
+
+  const minGap = Math.max(6, Math.round(svgRect.width * 0.012));
+  const lastTick = visibleTicks[visibleTicks.length - 1];
+  const kept: typeof visibleTicks = [visibleTicks[0]];
+
+  for (const item of visibleTicks.slice(1, -1)) {
+    const prev = kept[kept.length - 1];
+    if (item.rect.x <= prev.rect.right + minGap) {
+      item.text.style.opacity = '0';
+    } else {
+      kept.push(item);
+    }
+  }
+
+  const lastKept = kept[kept.length - 1];
+  if (lastTick.rect.x <= lastKept.rect.right + minGap && kept.length > 1) {
+    lastKept.text.style.opacity = '0';
+  }
+  lastTick.text.style.opacity = '1';
 }
 
 export function injectWatermark(svg: SVGSVGElement): void {
@@ -80,6 +127,60 @@ export function injectWatermark(svg: SVGSVGElement): void {
   const gBox = g.getBBox();
   const tx = svgRect.width - gBox.width - 20;
   g.setAttribute('transform', `translate(${tx}, ${refY})`);
+}
+
+export function applyLineClipping(
+  svg: SVGSVGElement,
+  clipRanges: ClipRange[],
+  totalLabels: number,
+): void {
+  if (clipRanges.length === 0 || totalLabels < 2) return;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const linePaths = svg.querySelectorAll('path.xkcd-chart-line');
+  if (linePaths.length === 0) return;
+
+  // chart.xkcd chart group: g[transform="translate(marginLeft, marginTop)"]
+  // Lines are drawn inside this group, so path x-coords go from 0 to chartAreaWidth.
+  // scalePoint: x(i) = (i / (totalLabels - 1)) * chartAreaWidth
+  const svgWidth = svg.getBoundingClientRect().width;
+  const mainG = svg.querySelector('g[transform]');
+  let marginLeft = 70;
+  if (mainG) {
+    const m = mainG.getAttribute('transform')?.match(/translate\(([^,]+),/);
+    if (m) marginLeft = parseFloat(m[1]);
+  }
+  const marginRight = 30; // chart.xkcd hardcoded
+  const chartAreaWidth = svgWidth - marginLeft - marginRight;
+  const pointSpacing = chartAreaWidth / (totalLabels - 1);
+
+  let defs = svg.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS(ns, 'defs');
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  linePaths.forEach((path, i) => {
+    if (i >= clipRanges.length) return;
+    const { startIndex, endIndex } = clipRanges[i];
+    if (startIndex === 0 && endIndex >= totalLabels - 1) return;
+
+    const startX = startIndex > 0 ? startIndex * pointSpacing - pointSpacing * 0.5 : -10;
+    const endX = endIndex < totalLabels - 1 ? endIndex * pointSpacing + pointSpacing * 0.5 : chartAreaWidth + 10;
+
+    const clipId = `npm-clip-${i}`;
+    const clipPath = document.createElementNS(ns, 'clipPath');
+    clipPath.setAttribute('id', clipId);
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', String(startX));
+    rect.setAttribute('y', '-1000');
+    rect.setAttribute('width', String(endX - startX));
+    rect.setAttribute('height', '2000');
+    clipPath.appendChild(rect);
+    defs!.appendChild(clipPath);
+
+    path.setAttribute('clip-path', `url(#${clipId})`);
+  });
 }
 
 export function formatLogYAxisLabels(svg: SVGSVGElement): void {
