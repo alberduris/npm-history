@@ -17,10 +17,17 @@ export interface LabelResult {
   tickDisplayTexts: Map<number, string>;
 }
 
+/** Index range of real (non-zero-padded) data for one series. */
+export interface ClipRange {
+  startIndex: number;
+  endIndex: number;
+}
+
 export interface TransformResult {
   chartData: ChartXkcdData;
   yTickCount: number;
   maxLogValue: number;
   tickPositions: Set<number>;
   tickDisplayTexts: Map<number, string>;
+  clipRanges: ClipRange[];
 }

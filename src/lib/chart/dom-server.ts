@@ -1,4 +1,5 @@
 import { formatDownloads } from './format-downloads';
+import type { ClipRange } from './types';
 
 // =============================================================================
 // Server-side versions (no getBoundingClientRect / getBBox / layout APIs)
@@ -54,6 +55,58 @@ export function formatLogYAxisLabelsServer(svg: SVGSVGElement | Element): void {
     const original = Math.pow(10, logVal);
     t.textContent = formatDownloads(original);
   }
+}
+
+export function applyLineClippingServer(
+  svg: SVGSVGElement | Element,
+  doc: Document,
+  clipRanges: ClipRange[],
+  totalLabels: number,
+): void {
+  if (clipRanges.length === 0 || totalLabels < 2) return;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const linePaths = svg.querySelectorAll('path.xkcd-chart-line');
+  if (linePaths.length === 0) return;
+
+  const svgWidth = parseFloat(svg.getAttribute('width') || '800');
+  const mainG = svg.querySelector('g[transform]');
+  let marginLeft = 70;
+  if (mainG) {
+    const m = mainG.getAttribute('transform')?.match(/translate\(([^,]+),/);
+    if (m) marginLeft = parseFloat(m[1]);
+  }
+  const marginRight = 30; // chart.xkcd hardcoded
+  const chartAreaWidth = svgWidth - marginLeft - marginRight;
+  const pointSpacing = chartAreaWidth / (totalLabels - 1);
+
+  let defs = svg.querySelector('defs');
+  if (!defs) {
+    defs = doc.createElementNS(ns, 'defs');
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  linePaths.forEach((path, i) => {
+    if (i >= clipRanges.length) return;
+    const { startIndex, endIndex } = clipRanges[i];
+    if (startIndex === 0 && endIndex >= totalLabels - 1) return;
+
+    const startX = startIndex > 0 ? startIndex * pointSpacing - pointSpacing * 0.5 : -10;
+    const endX = endIndex < totalLabels - 1 ? endIndex * pointSpacing + pointSpacing * 0.5 : chartAreaWidth + 10;
+
+    const clipId = `npm-clip-${i}`;
+    const clipPath = doc.createElementNS(ns, 'clipPath');
+    clipPath.setAttribute('id', clipId);
+    const rect = doc.createElementNS(ns, 'rect');
+    rect.setAttribute('x', String(startX));
+    rect.setAttribute('y', '-1000');
+    rect.setAttribute('width', String(endX - startX));
+    rect.setAttribute('height', '2000');
+    clipPath.appendChild(rect);
+    defs!.appendChild(clipPath);
+
+    path.setAttribute('clip-path', `url(#${clipId})`);
+  });
 }
 
 // npm-history hand-drawn icon (80x44 PNG, 2x density for crisp rendering at 29x16)

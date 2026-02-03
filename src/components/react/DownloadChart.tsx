@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import type { PackageChartData } from '../../lib/data-transform';
-import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark } from '../../lib/chart';
+import { transformForChart, formatLogYAxisLabels, styleXAxisLabels, injectWatermark, applyLineClipping } from '../../lib/chart';
 import FetchErrorState from './FetchErrorState';
 
 // @ts-expect-error chart.xkcd has no types
@@ -69,7 +69,7 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
 
     svg.innerHTML = '';
 
-    const { chartData, yTickCount, tickPositions, tickDisplayTexts } = transformForChart(data, options);
+    const { chartData, yTickCount, tickPositions, tickDisplayTexts, clipRanges } = transformForChart(data, options);
 
     if (chartData.labels.length === 0) return;
 
@@ -91,6 +91,7 @@ export default function DownloadChart({ data, options, onOptionsChange, chartRef
     // reformat tick labels to short display format, hide the rest.
     // Log Y-axis hack must wait for D3 transitions (~350ms).
     styleXAxisLabels(svg, tickPositions, tickDisplayTexts);
+    applyLineClipping(svg, clipRanges, chartData.labels.length);
     injectWatermark(svg);
 
     if (options.logScale) {

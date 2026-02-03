@@ -3,7 +3,7 @@ import { COLORS } from './constants';
 import { aggregateWeekly } from './data-transform';
 import type { PackageChartData } from './data-transform';
 import { fetchAllChunks } from './fetch';
-import { transformForChart, styleXAxisLabelsServer, formatLogYAxisLabelsServer, injectWatermarkServer } from './chart';
+import { transformForChart, styleXAxisLabelsServer, formatLogYAxisLabelsServer, injectWatermarkServer, applyLineClippingServer } from './chart';
 
 // --- Dark theme colors ---
 export const DARK_BG = '#0d1117';
@@ -50,7 +50,7 @@ export async function renderChart(
   legendPosition: string,
   { showLegend = true }: { showLegend?: boolean } = {},
 ): Promise<string> {
-  const { chartData, yTickCount, tickPositions, tickDisplayTexts } = transformForChart(seriesData, options);
+  const { chartData, yTickCount, tickPositions, tickDisplayTexts, clipRanges } = transformForChart(seriesData, options);
   if (chartData.labels.length === 0) {
     return '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="440"><text x="360" y="220" text-anchor="middle" fill="#888">No data available</text></svg>';
   }
@@ -113,6 +113,7 @@ export async function renderChart(
     });
 
     styleXAxisLabelsServer(svg, tickPositions, tickDisplayTexts);
+    applyLineClippingServer(svg, document, clipRanges, chartData.labels.length);
     if (options.logScale) {
       formatLogYAxisLabelsServer(svg);
     }

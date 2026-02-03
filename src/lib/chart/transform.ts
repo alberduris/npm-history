@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import type { PackageChartData, ChartOptions, LabelResult, TransformResult } from './types';
+import type { PackageChartData, ChartOptions, LabelResult, TransformResult, ClipRange } from './types';
 
 // --- X-Axis Tick Helpers ---
 
@@ -71,7 +71,7 @@ function generateMondaySequence(startDate: string, endDate: string): string[] {
 
 function buildUnifiedTimeline(
   series: PackageChartData[],
-): { timeline: string[]; seriesValues: number[][] } {
+): { timeline: string[]; seriesValues: number[][]; clipRanges: ClipRange[] } {
   let minDate = '';
   let maxDate = '';
   for (const s of series) {
@@ -82,10 +82,14 @@ function buildUnifiedTimeline(
     if (!maxDate || last > maxDate) maxDate = last;
   }
 
-  if (!minDate || !maxDate) return { timeline: [], seriesValues: [] };
+  if (!minDate || !maxDate) return { timeline: [], seriesValues: [], clipRanges: [] };
 
   const timeline = generateMondaySequence(minDate, maxDate);
+  const timelineIndex = new Map<string, number>();
+  for (let i = 0; i < timeline.length; i++) timelineIndex.set(timeline[i], i);
+
   const seriesValues: number[][] = [];
+  const clipRanges: ClipRange[] = [];
 
   for (const s of series) {
     const dataMap = new Map<string, number>();
@@ -116,14 +120,18 @@ function buildUnifiedTimeline(
     }
 
     seriesValues.push(values);
+    clipRanges.push({
+      startIndex: firstWeek ? (timelineIndex.get(firstWeek) ?? 0) : 0,
+      endIndex: lastWeek ? (timelineIndex.get(lastWeek) ?? timeline.length - 1) : timeline.length - 1,
+    });
   }
 
-  return { timeline, seriesValues };
+  return { timeline, seriesValues, clipRanges };
 }
 
 function buildAlignedTimeline(
   series: PackageChartData[],
-): { totalWeeks: number; seriesValues: number[][] } {
+): { totalWeeks: number; seriesValues: number[][]; clipRanges: ClipRange[] } {
   let maxLen = 0;
   const rawValues: number[][] = [];
 
@@ -133,15 +141,16 @@ function buildAlignedTimeline(
     if (vals.length > maxLen) maxLen = vals.length;
   }
 
-  // Pad shorter series with 0
+  const clipRanges: ClipRange[] = [];
   const seriesValues = rawValues.map((vals) => {
+    clipRanges.push({ startIndex: 0, endIndex: vals.length - 1 });
     if (vals.length < maxLen) {
       return [...vals, ...Array(maxLen - vals.length).fill(0)];
     }
     return vals;
   });
 
-  return { totalWeeks: maxLen, seriesValues };
+  return { totalWeeks: maxLen, seriesValues, clipRanges };
 }
 
 // --- Log Transform ---
@@ -217,19 +226,22 @@ export function transformForChart(
   options: ChartOptions,
 ): TransformResult {
   if (series.length === 0) {
-    return { chartData: { labels: [], datasets: [] }, yTickCount: 4, maxLogValue: 0, tickPositions: new Set(), tickDisplayTexts: new Map() };
+    return { chartData: { labels: [], datasets: [] }, yTickCount: 4, maxLogValue: 0, tickPositions: new Set(), tickDisplayTexts: new Map(), clipRanges: [] };
   }
 
   let seriesValues: number[][];
   let labelResult: LabelResult;
+  let clipRanges: ClipRange[];
 
   if (options.alignTimeline) {
     const aligned = buildAlignedTimeline(series);
     seriesValues = aligned.seriesValues;
+    clipRanges = aligned.clipRanges;
     labelResult = generateAlignLabels(aligned.totalWeeks);
   } else {
     const unified = buildUnifiedTimeline(series);
     seriesValues = unified.seriesValues;
+    clipRanges = unified.clipRanges;
     labelResult = generateDateLabels(unified.timeline, unified.timeline.length);
   }
 
@@ -256,5 +268,6 @@ export function transformForChart(
     maxLogValue,
     tickPositions,
     tickDisplayTexts,
+    clipRanges,
   };
 }
